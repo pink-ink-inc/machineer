@@ -1,4 +1,7 @@
-import configparser
+import yaml
+import jinja2
+
+import salt.client
 
 
 # import lxc
@@ -7,17 +10,22 @@ import configparser
 confPath = '/etc/machineer/machineer.conf'
 
 
-conf = configparser.ConfigParser()
-conf.read(confPath)
-
-
 class Resource(object):
-    def __init__(self): pass
+
+    def __init__(self, kws):
+        self.cli = salt.client.LocalClient() 
+        self.opt = dict(
+                yaml.load(
+                      jinja2.Template(open(confPath).read()).render()
+                    ) [type(self).__name__], **kws)
 
     def create(self): pass
 
     def status(self):
         return ResourceStatus()
+
+    def list(self):
+        return [ResourceStatus()]
 
     def enable(self): pass
 
@@ -45,7 +53,7 @@ class ResourceStatus(object):
                   'exists': False
                 , 'isEnabled': False
                 , 'isRunning': False
-                , 'statusDescription': ''
+                , 'descr': ''
                 }
 
         arg_vals.update(kws)

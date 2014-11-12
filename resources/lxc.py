@@ -1,54 +1,68 @@
 import os
 import collections
 import re
-
-import salt.client
+import copy
 
 from machineer.resources import *
 
 
 class LXC(Resource):
 
-    def __init__(self, kws):
-        self.name = "{ClusterName}-{InstanceID}".format(**kws)
-        self.path   = os.path.join(conf.get('master','lxcPath'), self.name)
-        self.config = os.path.join(conf.get('master','lxcpath'), self.name, 'config')
-        self.cli = salt.client.LocalClient()
+    RawStatus = collections.namedtuple(
+              'RawStatus'
+            , ['name', 'state', 'ipv4', 'ipv6', 'autostart']
+            )
 
-    def test(self):
-        tgt = conf.get('master','hostname').encode('ascii')
-        print type(tgt)
-        print tgt
-        print 'master-18'
-        return self.cli.cmd(tgt, 'cmd.run', ['ls /'])
-
-    def status(self):
-        LXCRawStatus = collections.namedtuple(
-                  'LXCRawStatus'
-                , ['name', 'state', 'ipv4', 'ipv6', 'autostart']
-                )
-
-        lines = self.cli.cmd(
-                  conf.get('master','hostname')
+    def _getRawStatusList(self):
+        return [ LXC.RawStatus(* re.split('  +', line.strip())) for line in self.cli.cmd(
+                  self.opt['hostname']
                 , 'cmd.run'
                 , ['lxc-ls --fancy']
-                ) [conf.get('master','hostname')] .splitlines() [2:]
+                ) [self.opt['hostname']] .splitlines() [2:] ]
 
-        containers = [ LXCRawStatus(* re.split('  +', line.strip())) for line in lines ] 
-        matches = [ x for x in containers if x.name == self.name ]
+    @staticmethod
+    def _resolveRawStatus(rawStatus):
+        iplist = sum( [ line.split(', ') if line != '-' else [] # A tiny functional exercise.
+                    for line in [rawStatus.ipv4, rawStatus.ipv6] ] , [ ] ) 
+        return ResourceStatus(
+              name = rawStatus.name
+            , exists = True # Presumably.
+                            # A rawStatus can only be generated from an existing instance.
+            , isEnabled = rawStatus.autostart == 'YES'
+            , isRunning = rawStatus.state == 'RUNNING'
+            , descr = ', '.join(iplist)
+            )
 
-        if len(matches) == 0:
-            return ResourceStatus() 
+    def _containerName(self):
+        return "{ClusterName}-{InstanceID}".format(**self.opt)
 
-        else: # A tiny functional exercise.
-            iplist = sum( [ line.split(', ') if line != '-' else []
-                        for line in [matches[0].ipv4, matches[0].ipv6] ] , [ ] ) 
-            return ResourceStatus(
-                  exists = True
-                , isEnabled = matches[0].autostart == 'YES'
-                , isRunning = matches[0].state == 'RUNNING'
-                , statusDescription = ', '.join(iplist)
-                )
+    # def _path(self):
+    #     return os.path.join(conf.get('master','lxcPath'), self._name())
+
+    # def _config(self):
+    #     return os.path.join(conf.get('master','lxcPath'), self._name(), 'config')
+
+
+    def __init__(self, kws): 
+        super(type(self), self).__init__(kws)
+        self.opt.update(kws)
+        # try: self.opt['container'] = "{ClusterName}-{InstanceID}".format(**self.opt)
+        # except KeyError: pass
+
+    # def test(self):
+    #     tgt = conf.get('master','hostname').encode('ascii')
+    #     return self.cli.cmd(tgt, 'cmd.run', ['ls /'])
+
+    def status(self):
+        matches = [ x for x in self._getRawStatusList()
+                if x.name == self._containerName() ]
+        if len(matches) == 0: return ResourceStatus()
+        else: return self._resolveRawStatus(matches[0])
+
+    def list(self):
+        return [ self._resolveRawStatus(x) for x in self._getRawStatusList() ]
+
+        
 
     def create(self):
         pass

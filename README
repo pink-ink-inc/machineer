@@ -1,0 +1,9 @@
+Example usage:
+
+import machineer.resources.lxc as l
+[ x.descr for x in l.LXC({'ClusterName':'myCluster'}).list() if x.isRunning ]
+l.LXC({'ClusterName':'ngw','InstanceID':'salt'}).status().isRunning
+
+Please note that a resource object is always initialized with a dictionary, keys from which may
+than be used by its methods. Take care to provide sufficient information either from a
+configuration file or in the constructor itself.
