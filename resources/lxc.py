@@ -34,7 +34,7 @@ class LXC(Resource):
             )
 
     def _containerName(self):
-        return "{ClusterName}-{InstanceID}".format(**self.opt)
+        return "{InstanceID}.{ClusterName}".format(**self.opt)
 
     # def _path(self):
     #     return os.path.join(conf.get('master','lxcPath'), self._name())
@@ -43,9 +43,9 @@ class LXC(Resource):
     #     return os.path.join(conf.get('master','lxcPath'), self._name(), 'config')
 
 
-    def __init__(self, kws): 
-        super(type(self), self).__init__(kws)
-        self.opt.update(kws)
+    # def __init__(self, kws): 
+    #     super(type(self), self).__init__(kws)
+    #     self.opt.update(kws)
         # try: self.opt['container'] = "{ClusterName}-{InstanceID}".format(**self.opt)
         # except KeyError: pass
 
@@ -62,9 +62,77 @@ class LXC(Resource):
     def list(self):
         return [ self._resolveRawStatus(x) for x in self._getRawStatusList() ]
 
-        
+    def create(self): 
+        def valid():
+            return self.status().exists
 
-    def create(self):
-        pass
+        assert not valid()
+        self.cli.cmd ( self.opt['hostname'], 'file.mkdir'
+                , [ os.path.join (self.opt['root'], self._containerName()) ] ) 
+        self.cli.cmd ( self.opt['hostname'], 'file.mkdir'
+                , [ os.path.join (self.opt['root'], self._containerName(), 'rootfs') ] ) 
+        self.cli.cmd ( self.opt['hostname'], 'cp.get_template'
+                ,   [ 'salt://resource/LXC/config.jinja'
+                    , os.path.join(self.opt['root'], self._containerName(), 'config') ]
+                , kwarg = self.opt )
+        assert valid()
+
+    def destroy(self):
+        def valid():
+            return not self.status().exists
+
+        assert not valid()
+        self.cli.cmd ( self.opt['hostname'] , 'file.rmdir'
+                , [ os.path.join (self.opt['root'], self._containerName(), 'rootfs') ] )
+        self.cli.cmd ( self.opt['hostname'] , 'file.remove'
+                , [ os.path.join (self.opt['root'], self._containerName(), 'config') ] )
+        self.cli.cmd ( self.opt['hostname'] , 'file.rmdir'
+                , [ os.path.join (self.opt['root'], self._containerName()) ] )
+        assert valid()
+
+    def enable(self):
+        def valid():
+            return self.status().isEnabled
+            
+        assert not valid()
+        self.cli.cmd ( self.opt['hostname'], 'cp.get_template'
+                ,   [ 'salt://resource/LXC/config.jinja'
+                    , os.path.join(self.opt['root'], self._containerName(), 'config') ]
+                , kwarg = self.opt
+                )
+
+        assert valid()
+
+    def disable(self):
+        def valid():
+            return not self.status().isEnabled
+            
+        assert not valid()
+        self.cli.cmd ( self.opt['hostname'], 'cp.get_template'
+                ,   [ 'salt://resource/LXC/config.jinja'
+                    , os.path.join(self.opt['root'], self._containerName(), 'config') ]
+                , kwarg = dict ( self.opt, **{ 'autostart': False } )
+                )
+
+        assert valid()
+
+    def start():
+        def valid(self):
+            return self.status().isRunning
+            
+        assert not valid()
+
+        assert valid()
+
+    def stop(self):
+        def valid():
+            return not self.status().isRunning
+            
+        assert not valid()
+
+        assert valid()
+
+
+
 
 

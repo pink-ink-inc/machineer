@@ -44,6 +44,9 @@ class Resource(object):
     def __nonzero__(self):
         return self.status().exists
 
+    def name(self):
+        return self.status().name
+
 
 class ResourceStatus(object): 
 
