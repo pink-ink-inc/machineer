@@ -1,7 +1,31 @@
 import unittest
 
 import machineer.resources.lxc
+import machineer.resources.lvm
+import machineer.resources.mount
 
+
+class TestResourceLVM(unittest.TestCase):
+
+    def setUp(self):
+        self.o = machineer.resources.lvm.LVM (
+                { 'pool': 'machineer'
+                , 'name': 'tempora' }
+                )
+
+    def test(self):
+        [ getattr(self.o, f)() for f in self.o.methods ]
+
+class TestResourceMount(unittest.TestCase):
+
+    def setUp(self):
+        self.o = machineer.resources.mount.Mount (
+                { 'device': '/tmp/a'
+                , 'mountpoint': '/tmp/b' }
+                )
+
+    def test(self):
+        [ getattr(self.o, f)() for f in self.o.methods ]
 
 class TestResourceLXC(unittest.TestCase):
 
