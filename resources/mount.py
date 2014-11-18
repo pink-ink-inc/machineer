@@ -15,6 +15,8 @@ class Mount(Resource):
             , ['device', 'mountpoint']
             )
 
+    options = [ 'device', 'mountpoint' ]
+
     @staticmethod
     def _stringToNamedTuple (tup, string, defaultValue = ' '): 
         return tup (** dict(zip( tup._fields, list ( defaultValue * len (tup._fields)) ))
@@ -127,7 +129,7 @@ class Mount(Resource):
     def l_destroy(self):
             self.cli.cmd ( self.opt['hostname'], 'file.rmdir', [self.opt['device']] )
             self.cli.cmd ( self.opt['hostname'], 'file.rmdir', [self.opt['mountpoint']] )
-        
+
 
     def l_enable(self):
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',

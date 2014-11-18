@@ -13,6 +13,8 @@ class LXC(Resource):
             , ['name', 'state', 'ipv4', 'ipv6', 'autostart']
             )
 
+    options = [ 'ClusterName', 'InstanceID' ]
+
     def _getRawStatusList(self):
         return [ self.RawStatus(* re.split('  +', line.strip())) for line in self.cli.cmd(
                   self.opt['hostname']

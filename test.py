@@ -9,8 +9,8 @@ class TestResourceLVM(unittest.TestCase):
 
     def setUp(self):
         self.o = machineer.resources.lvm.LVM (
-                { 'pool': 'machineer'
-                , 'name': 'tempora' }
+                { 'Pool': 'machineer'
+                , 'LV': 'tempora' }
                 )
 
     def test(self):

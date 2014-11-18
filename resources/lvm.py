@@ -13,6 +13,8 @@ class LVM(Resource):
             )
     nameFormat = '{VG}/{LV}'
     methods = [ 'groupinit', 'create', 'enable', 'start', 'stop', 'disable', 'destroy' ] 
+    options = [ 'VG', 'Pool', 'Origin', 'LV' ]
+
 
     def _getRawStatusList(self):
         default = self.RawStatus(** dict(zip(
@@ -42,11 +44,11 @@ class LVM(Resource):
             )
 
     def _mkName(self):
-        return self.nameFormat.format(VG = self.opt['group'], LV = self.opt['name'])
+        return self.nameFormat.format(VG = self.opt['VG'], LV = self.opt['LV'])
 
     def status(self):
         matches = [ x for x in self._getRawStatusList()
-                if self.opt['name'] == x.LV and self.opt['group'] == x.VG ]
+                if self.opt['LV'] == x.LV and self.opt['VG'] == x.VG ]
         if len(matches) != 0: print matches[0]
         else: print ('No matches')
         if len(matches) == 0: return ResourceStatus()
@@ -84,36 +86,36 @@ class LVM(Resource):
     def v_stop    (self) : return not self.v_start  ()
 
     def v_groupinit(self):
-        pool = LVM({'name': self.opt['pool']}) 
+        pool = LVM({'LV': self.opt['Pool']}) 
         status = pool.status()
         return bool (status.exists and status.isPool)
 
     def l_groupinit(self):
         self.cli.cmd ( self.opt['hostname'], 'cmd.run', 
             [ 'lvcreate'
-                ' --size {poolsize}'
-                ' --name {pool}'
-                ' {group}'
+                ' --size {PoolSize}'
+                ' --name {Pool}'
+                ' {VG}'
                 .format (**self.opt) ]
             )
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvcreate'
-                ' --size {poolmetasize}'
-                ' --name {pool}_meta'
+                ' --size {PoolMetaSize}'
+                ' --name {Pool}_meta'
                 ' ngw'
                 .format (**self.opt) ]
             )
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'yes | lvconvert'
-                ' --thinpool {group}/{pool}'
-                ' --poolmetadata {group}/{pool}_meta'
+                ' --thinpool {VG}/{Pool}'
+                ' --poolmetadata {VG}/{Pool}_meta'
                 .format (**self.opt) ]
             )
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvcreate'
                 ' --name zero'
                 ' --virtualsize 2G'
-                ' --thinpool ngw/machineer'
+                ' --thinpool {VG}/{Pool}'
                 .format (**self.opt) ]
             )
 
@@ -121,9 +123,9 @@ class LVM(Resource):
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvcreate'
                 ' --type thin'
-                ' --name {name}'
-                ' --snapshot {image}'
-                ' --thinpool {group}/{pool}'
+                ' --name {LV}'
+                ' --snapshot {Origin}'
+                ' --thinpool {VG}/{Pool}'
                 .format (**self.opt) ]
             )
 
@@ -131,12 +133,12 @@ class LVM(Resource):
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             # [ 'lvremove'
             #     ' --force'
-            #     ' {group}/{name}'
+            #     ' {VG}/{LV}'
             #     .format (**self.opt) ]
             [ 'lvrename'
-                ' {group}'
-                ' {name}'
-                ' {name}_destroyed_{time}'
+                ' {VG}'
+                ' {LV}'
+                ' {LV}_destroyed_{time}'
                 .format (time = time.time(), **self.opt) ]
             )
         
@@ -145,7 +147,7 @@ class LVM(Resource):
             [ 'lvchange'
                 ' --setactivationskip n'
                 ' --permission rw'
-                ' {group}/{name}'
+                ' {VG}/{LV}'
                 .format (**self.opt) ]
             )
 
@@ -154,7 +156,7 @@ class LVM(Resource):
             [ 'lvchange'
                 ' --setactivationskip y'
                 ' --permission r'
-                ' {group}/{name}'
+                ' {VG}/{LV}'
                 .format (**self.opt) ]
             )
 
@@ -162,7 +164,7 @@ class LVM(Resource):
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvchange'
                 ' --activate y'
-                ' {group}/{name}'
+                ' {VG}/{LV}'
                 .format (**self.opt) ]
             )
 
@@ -170,7 +172,7 @@ class LVM(Resource):
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvchange'
                 ' --activate n'
-                ' {group}/{name}'
+                ' {VG}/{LV}'
                 .format (**self.opt) ]
             )
 
