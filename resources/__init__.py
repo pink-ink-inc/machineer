@@ -13,11 +13,48 @@ confPath = '/etc/machineer/machineer.conf'
 class Resource(object):
 
     def __init__(self, kws):
-        self.cli = salt.client.LocalClient() 
-        self.opt = dict(
-                yaml.load(
-                      jinja2.Template(open(confPath).read()).render()
-                    ) [type(self).__name__], **kws)
+        self.__opts__ = salt.config.master_config('/etc/salt/master')
+        globConf = [ 'redis-server' ]
+        self.cli = salt.client.LocalClient()
+        self.opt = {}
+        try: self.opt .update (
+                yaml.load ( jinja2.Template(open(confPath).read()).render()
+                    ) ['resources'] [type(self).__name__] )
+        except KeyError: pass
+        self.opt .update ( **kws )
+        for key in globConf:
+            self.opt[key] = yaml.load (
+                    jinja2.Template(open(confPath).read()).render()
+                    ) [key]
+
+    methods = [ 'create', 'enable', 'start', 'stop', 'disable', 'destroy' ]
+
+    def defineMethods(self):
+        [ setattr ( self, f
+            , self.wrap ( getattr (self, 'l_'+f), getattr (self, 'v_'+f) )
+            ) for f in self.methods ] 
+
+    @staticmethod
+    def wrap(logic, valid):
+        def closure():
+            print 'Entering ' + logic.__name__ + ' with ' + valid.__name__
+            if not valid():
+                print 'State is not desirable. Will run the logic.'
+                logic()
+                print 'Logic completed.'
+                assert valid()
+                print 'Desirable state reached.'
+            else:
+                print 'State is already desirable.'
+        return closure
+
+    def v_create  (self) : return bool(self)
+    def v_enable  (self) : return self.isEnabled ()
+    def v_start   (self) : return self.isRunning () 
+    def v_destroy (self) : return not self.v_create ()
+    def v_disable (self) : return not self.v_enable ()
+    def v_stop    (self) : return not self.v_start  ()
+
 
     def create(self): pass
 

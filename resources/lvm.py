@@ -15,7 +15,6 @@ class LVM(Resource):
     methods = [ 'groupinit', 'create', 'enable', 'start', 'stop', 'disable', 'destroy' ] 
     options = [ 'VG', 'Pool', 'Origin', 'LV' ]
 
-
     def _getRawStatusList(self):
         default = self.RawStatus(** dict(zip(
               self.RawStatus._fields
@@ -58,32 +57,8 @@ class LVM(Resource):
         return [ self._resolveRawStatus(x) for x in self._getRawStatusList() ]
 
     def __init__(self, kws): 
-        super(type(self), self).__init__(kws)
-
-        [ setattr ( self, f
-            , self.wrap ( getattr (self, 'l_'+f), getattr (self, 'v_'+f) )
-            ) for f in self.methods ]
-
-    @staticmethod
-    def wrap(logic, valid):
-        def closure():
-            print 'Entering ' + logic.__name__ + ' with ' + valid.__name__
-            if not valid():
-                print 'State is not desirable. Will run the logic.'
-                logic()
-                print 'Logic completed.'
-                assert valid()
-                print 'Desirable state reached.'
-            else:
-                print 'State is already desirable.'
-        return closure
-
-    def v_create  (self) : return bool(self)
-    def v_enable  (self) : return self.isEnabled ()
-    def v_start   (self) : return self.isRunning () 
-    def v_destroy (self) : return not self.v_create ()
-    def v_disable (self) : return not self.v_enable ()
-    def v_stop    (self) : return not self.v_start  ()
+        super(type(self), self).__init__(kws) 
+        self.defineMethods()
 
     def v_groupinit(self):
         pool = LVM({'LV': self.opt['Pool']}) 

@@ -15,7 +15,7 @@ class Mount(Resource):
             , ['device', 'mountpoint']
             )
 
-    options = [ 'device', 'mountpoint' ]
+    options = [ 'device', 'mountpoint', 'order' ]
 
     @staticmethod
     def _stringToNamedTuple (tup, string, defaultValue = ' '): 
@@ -54,7 +54,8 @@ class Mount(Resource):
     def _mkName(self):
         h = hashlib.sha1()
         h.update ( self.opt['device'] + self.opt['mountpoint'] )
-        return base64.b32encode(h.digest())
+        self.opt['digest'] = base64.b32encode(h.digest())
+        return '{order}-{digest}'.format(**self.opt)
 
     def __init__(self, kws): 
         super(type(self), self).__init__(kws)
@@ -63,27 +64,6 @@ class Mount(Resource):
         self.opt['fstab'] = os.path.join(self.opt['fstab_d'], self.opt['name'])
 
         self.defineMethods()
-
-    def defineMethods(self):
-        [ setattr ( self, f
-            , self.wrap ( getattr (self, 'l_'+f), getattr (self, 'v_'+f) )
-            ) for f in self.methods ] 
-
-    methods = [ 'create', 'enable', 'start', 'stop', 'disable', 'destroy' ]
-
-    @staticmethod
-    def wrap(logic, valid):
-        def closure():
-            print 'Entering ' + logic.__name__ + ' with ' + valid.__name__
-            if not valid():
-                print 'State is not desirable. Will run the logic.'
-                logic()
-                print 'Logic completed.'
-                assert valid()
-                print 'Desirable state reached.'
-            else:
-                print 'State is already desirable.'
-        return closure
 
     def identify(self, x):
         return bool (
@@ -112,13 +92,6 @@ class Mount(Resource):
                 , isEnabled = bool ( self._findFirst (self._getListEnabled(), self.identify ))
                 , descr = '{device} on {mountpoint}'.format(**self.opt)
                 )
-
-    def v_create  (self) : return bool(self)
-    def v_enable  (self) : return self.isEnabled ()
-    def v_start   (self) : return self.isRunning () 
-    def v_destroy (self) : return not self.v_create ()
-    def v_disable (self) : return not self.v_enable ()
-    def v_stop    (self) : return not self.v_start  ()
 
     def l_create(self):
         if not self._checkDevice():
