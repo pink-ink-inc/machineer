@@ -1,0 +1,13 @@
+Machineer TODO
+
+LVM:
+    - Rename to lvmthin.
+    - Introduce a following naming scheme:
+        LV: {Pool}-{Name}
+        since I may need more pools for one same project.
+        It makes no sense to not have explicit naming hierarchy.
+
+        I may do the same through schemata...
+
+
+        I am unsure.

@@ -14,7 +14,7 @@ class Resource(object):
 
     def __init__(self, kws):
         self.__opts__ = salt.config.master_config('/etc/salt/master')
-        globConf = [ 'redis-server' ]
+        globConf = [ ]
         self.cli = salt.client.LocalClient()
         self.opt = {}
         try: self.opt .update (
@@ -37,7 +37,7 @@ class Resource(object):
     @staticmethod
     def wrap(logic, valid):
         def closure():
-            print 'Entering ' + logic.__name__ + ' with ' + valid.__name__
+            print ' -- Entering {l}'.format (l = logic.__name__)
             if not valid():
                 print 'State is not desirable. Will run the logic.'
                 logic()

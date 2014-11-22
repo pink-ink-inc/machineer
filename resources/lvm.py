@@ -88,14 +88,14 @@ class LVM(Resource):
             )
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvcreate'
-                ' --name zero'
+                ' --name {Pool}_zero'
                 ' --virtualsize 2G'
                 ' --thinpool {VG}/{Pool}'
                 .format (**self.opt) ]
             )
 
     def l_create(self):
-        self.cli.cmd ( self.opt['hostname'], 'cmd.run',
+        print self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvcreate'
                 ' --type thin'
                 ' --name {LV}'
@@ -118,7 +118,7 @@ class LVM(Resource):
             )
         
     def l_enable(self):
-        self.cli.cmd ( self.opt['hostname'], 'cmd.run',
+        print self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvchange'
                 ' --setactivationskip n'
                 ' --permission rw'
@@ -136,7 +136,7 @@ class LVM(Resource):
             )
 
     def l_start(self):
-        self.cli.cmd ( self.opt['hostname'], 'cmd.run',
+        print self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvchange'
                 ' --activate y'
                 ' {VG}/{LV}'

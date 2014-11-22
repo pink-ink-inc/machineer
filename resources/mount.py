@@ -66,9 +66,13 @@ class Mount(Resource):
         self.defineMethods()
 
     def identify(self, x):
+        def readlink(path):
+            return self.cli.cmd ( self.opt['hostname'], 'cmd.run',
+                [ 'readlink -f {}' .format (path) ] ) [self.opt['hostname']]
+
         return bool (
-                self.opt['device'] == x.device and
-                self.opt['mountpoint'] == x.mountpoint
+                readlink(self.opt['device']) == readlink(x.device) and
+                readlink(self.opt['mountpoint']) == readlink(x.mountpoint)
                 )
 
     def _checkDevice(self):
@@ -122,13 +126,21 @@ class Mount(Resource):
     def l_start(self):
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
                 [ 'initctl'
+                    ' stop'
+                    ' machineer-mount'
+                    ' device={device}'
+                    ' mountpoint={mountpoint}'
+                    .format (**self.opt) ]
+                )
+        self.cli.cmd ( self.opt['hostname'], 'cmd.run',
+                [ 'initctl'
                     ' start'
                     ' machineer-mount'
                     ' device={device}'
                     ' mountpoint={mountpoint}'
                     .format (**self.opt) ]
                 )
-    
+
     def l_stop(self):
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
                 [ 'initctl'
