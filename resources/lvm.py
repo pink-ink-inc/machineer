@@ -1,5 +1,6 @@
 import time
 import collections
+import copy
 
 from machineer.resources import *
 
@@ -12,7 +13,7 @@ class LVM(Resource):
                 , 'Log', 'CpySync', 'Convert']
             )
     nameFormat = '{VG}/{LV}'
-    methods = [ 'groupinit', 'create', 'enable', 'start', 'stop', 'disable', 'destroy' ] 
+    methods = [ 'groupinit', 'create', 'enable', 'start', 'stop', 'disable', 'destroy', 'snap' ] 
     options = [ 'VG', 'Pool', 'Origin', 'LV' ]
 
     def _getRawStatusList(self):
@@ -95,6 +96,12 @@ class LVM(Resource):
             )
 
     def l_create(self):
+        print ( 'command: ' 'lvcreate'
+                ' --type thin'
+                ' --name {LV}'
+                ' --snapshot {Origin}'
+                ' --thinpool {VG}/{Pool}'
+                .format (**self.opt) )
         print self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvcreate'
                 ' --type thin'
@@ -150,4 +157,20 @@ class LVM(Resource):
                 ' {VG}/{LV}'
                 .format (**self.opt) ]
             )
+
+    def v_snap (self):
+        try:
+            return LVM (self.opt_snap) .status() .exists
+        except (AttributeError, KeyError):
+            return False
+
+
+    def l_snap (self): 
+        self.opt_snap = copy.deepcopy (self.opt)
+        self.opt_snap['SnapTime'] = time.time()
+        self.opt_snap['LV'] = '{0[LV]}_snap_{1[SnapTime]}'.format (self.opt, self.opt_snap)
+        self.opt_snap['Origin'] = self.opt['LV']
+        print self.opt_snap
+        LVM (self.opt_snap) .create()
+        
 

@@ -77,7 +77,7 @@ class LXC(Resource):
                     ,   [ 'salt://resource/LXC/config.jinja'
                         , os.path.join(self.opt['root'], self._mkName(), 'config') ]
                     , kwarg = self.opt )
-            print self.cli.cmd ( self.opt['hostname'], 'cmd.run',
+            self.cli.cmd ( self.opt['hostname'], 'cmd.run',
                     [ 'echo {t} > {f}'.format (
                           f = os.path.join (
                               self.opt['root']

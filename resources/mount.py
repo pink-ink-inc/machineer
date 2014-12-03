@@ -65,6 +65,21 @@ class Mount(Resource):
 
         self.defineMethods()
 
+        def wrap(f):
+            def ret(*args, **kws):
+                os.sys.stdout.write (
+                        'calling function {0[1]}'
+                        ' on host {0[0]}'
+                        ' with args following:' .format  (args)
+                        )
+                os.sys.stdout.write (str(args))
+                os.sys.stdout.write (str(kws))
+                s = f (*args, **kws) 
+                os.sys.stdout.write(str(s) if s else '')
+                return s
+            return ret
+        self.cli.cmd = wrap ( self.cli.cmd )
+
     def identify(self, x):
         def readlink(path):
             return self.cli.cmd ( self.opt['hostname'], 'cmd.run',

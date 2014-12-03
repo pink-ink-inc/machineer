@@ -38,6 +38,7 @@ class Resource(object):
     def wrap(logic, valid):
         def closure():
             print ' -- Entering {l}'.format (l = logic.__name__)
+            print ' -- closure class :: {c}.' .format (c = logic.im_self.__class__.__name__)
             if not valid():
                 print 'State is not desirable. Will run the logic.'
                 logic()
