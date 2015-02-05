@@ -33,12 +33,14 @@ class Resource(object):
                 os.sys.stdout.write (
                         'calling function {0[1]}'
                         ' on host {0[0]}'
-                        ' with args following:' .format  (args)
+                        ' with args following:\n' .format  (args)
                         )
                 os.sys.stdout.write (str(args))
                 os.sys.stdout.write (str(kws))
                 s = f (*args, **kws)
-                os.sys.stdout.write(str(s) if s else '')
+                os.sys.stdout.write ('\n' 'Output:' '\n')
+                os.sys.stdout.write(str(s) if s else 'No output.')
+                os.sys.stdout.write('\n' + '-'*10 + '\n')
                 return s
             return ret
         self.cli.cmd = wrap ( self.cli.cmd )
