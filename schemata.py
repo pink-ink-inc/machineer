@@ -1,4 +1,3 @@
-import yaml
 import jinja2
 import json
 import yaml
@@ -7,7 +6,7 @@ import os
 import copy
 
 
-from machineer.resources import lxc, lvm, mount 
+from machineer.resources import lxc, lvm, mount
 
 
 confPath = '/etc/machineer/machineer.conf'
@@ -39,7 +38,7 @@ def list_(project = None):
     return filter ( lambda x: x[0]
             , [
                   ( project
-                    , [ json.loads (key) for key in 
+                    , [ json.loads (key) for key in
                         store.smembers ( 'schemata-project-param:{project}'
                             .format(project = project) ) ] )
                 , ( True
@@ -47,6 +46,7 @@ def list_(project = None):
               ]
 
             ) [0] [1]
+
 
 class Instance(object):
 
@@ -82,7 +82,7 @@ class Instance(object):
     def create(self):
         pass
 
-    def status(self): 
+    def status(self):
         s = self._in_status()
         self.store.set (self.store_key, self._jsonConvert (s))
         return s
@@ -132,7 +132,7 @@ class I_Machineer(Instance):
                             )
                   } )
 
-        self.dev_container = lxc.LXC ( self.opt['resources']['LXC'] ) 
+        self.dev_container = lxc.LXC ( self.opt['resources']['LXC'] )
 
     def test(self):
         return (self.opt)
@@ -193,7 +193,7 @@ class I_NextGISWeb(Instance):
         self.prototype = I_Machineer(self.prototype_opt)
 
     def create(self):
-        self.prototype_status = self.prototype.create() 
+        self.prototype_status = self.prototype.create()
         return self.prototype_status
 
     def destroy(self):
