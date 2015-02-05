@@ -1,5 +1,6 @@
 import yaml
 import jinja2
+import os
 
 import salt.client
 
@@ -27,12 +28,27 @@ class Resource(object):
                     jinja2.Template(open(confPath).read()).render()
                     ) [key]
 
+        def wrap(f):
+            def ret(*args, **kws):
+                os.sys.stdout.write (
+                        'calling function {0[1]}'
+                        ' on host {0[0]}'
+                        ' with args following:' .format  (args)
+                        )
+                os.sys.stdout.write (str(args))
+                os.sys.stdout.write (str(kws))
+                s = f (*args, **kws)
+                os.sys.stdout.write(str(s) if s else '')
+                return s
+            return ret
+        self.cli.cmd = wrap ( self.cli.cmd )
+
     methods = [ 'create', 'enable', 'start', 'stop', 'disable', 'destroy' ]
 
     def defineMethods(self):
         [ setattr ( self, f
             , self.wrap ( getattr (self, 'l_'+f), getattr (self, 'v_'+f) )
-            ) for f in self.methods ] 
+            ) for f in self.methods ]
 
     @staticmethod
     def wrap(logic, valid):
@@ -51,7 +67,7 @@ class Resource(object):
 
     def v_create  (self) : return bool(self)
     def v_enable  (self) : return self.isEnabled ()
-    def v_start   (self) : return self.isRunning () 
+    def v_start   (self) : return self.isRunning ()
     def v_destroy (self) : return not self.v_create ()
     def v_disable (self) : return not self.v_enable ()
     def v_stop    (self) : return not self.v_start  ()
@@ -86,7 +102,7 @@ class Resource(object):
         return self.status().name
 
 
-class ResourceStatus(object): 
+class ResourceStatus(object):
 
     def __init__(self, **kws):
 

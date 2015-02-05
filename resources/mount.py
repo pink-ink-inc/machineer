@@ -18,7 +18,7 @@ class Mount(Resource):
     options = [ 'device', 'mountpoint', 'order' ]
 
     @staticmethod
-    def _stringToNamedTuple (tup, string, defaultValue = ' '): 
+    def _stringToNamedTuple (tup, string, defaultValue = ' '):
         return tup (** dict(zip( tup._fields, list ( defaultValue * len (tup._fields)) ))
                 ) ._replace (** dict(zip( tup._fields, string.split() )))
 
@@ -57,28 +57,13 @@ class Mount(Resource):
         self.opt['digest'] = base64.b32encode(h.digest())
         return '{order}-{digest}'.format(**self.opt)
 
-    def __init__(self, kws): 
+    def __init__(self, kws):
         super(type(self), self).__init__(kws)
 
         self.opt['name'] = self._mkName()
         self.opt['fstab'] = os.path.join(self.opt['fstab_d'], self.opt['name'])
 
         self.defineMethods()
-
-        def wrap(f):
-            def ret(*args, **kws):
-                os.sys.stdout.write (
-                        'calling function {0[1]}'
-                        ' on host {0[0]}'
-                        ' with args following:' .format  (args)
-                        )
-                os.sys.stdout.write (str(args))
-                os.sys.stdout.write (str(kws))
-                s = f (*args, **kws) 
-                os.sys.stdout.write(str(s) if s else '')
-                return s
-            return ret
-        self.cli.cmd = wrap ( self.cli.cmd )
 
     def identify(self, x):
         def readlink(path):
@@ -104,7 +89,7 @@ class Mount(Resource):
         return self.cli.cmd ( self.opt['hostname'], 'file.directory_exists'
                     , [self.opt['mountpoint']] )[self.opt['hostname']]
 
-    def status(self): 
+    def status(self):
         return ResourceStatus ( name = self.opt['name']
                 , exists = self._checkDevice() and self._checkMountpoint()
                 , isRunning = bool ( self._findFirst (self._getListRunning(), self.identify ))
@@ -137,7 +122,7 @@ class Mount(Resource):
                     ' {fstab}'
                     .format (**self.opt) ]
                 )
-    
+
     def l_start(self):
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
                 [ 'initctl'
