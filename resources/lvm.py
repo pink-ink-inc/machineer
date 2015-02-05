@@ -13,7 +13,7 @@ class LVM(Resource):
                 , 'Log', 'CpySync', 'Convert']
             )
     nameFormat = '{VG}/{LV}'
-    methods = [ 'groupinit', 'create', 'enable', 'start', 'stop', 'disable', 'destroy', 'snap' ] 
+    methods = [ 'groupinit', 'create', 'enable', 'start', 'stop', 'disable', 'destroy', 'snap' ]
     options = [ 'VG', 'Pool', 'Origin', 'LV' ]
 
     def _getRawStatusList(self):
@@ -27,7 +27,7 @@ class LVM(Resource):
                   self.opt['hostname']
                 , 'cmd.run'
                 , ['lvs --noheadings --separator " "']
-                ) [self.opt['hostname']] .splitlines() [1:] ]
+                ) [self.opt['hostname']] .splitlines() ]
 
     @staticmethod
     def _resolveRawStatus(s):
@@ -57,17 +57,17 @@ class LVM(Resource):
     def list(self):
         return [ self._resolveRawStatus(x) for x in self._getRawStatusList() ]
 
-    def __init__(self, kws): 
-        super(type(self), self).__init__(kws) 
+    def __init__(self, kws):
+        super(type(self), self).__init__(kws)
         self.defineMethods()
 
     def v_groupinit(self):
-        pool = LVM({'LV': self.opt['Pool']}) 
+        pool = LVM({'LV': self.opt['Pool']})
         status = pool.status()
         return bool (status.exists and status.isPool)
 
     def l_groupinit(self):
-        self.cli.cmd ( self.opt['hostname'], 'cmd.run', 
+        self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvcreate'
                 ' --size {PoolSize}'
                 ' --name {Pool}'
@@ -123,7 +123,7 @@ class LVM(Resource):
                 ' {LV}_destroyed_{time}'
                 .format (time = time.time(), **self.opt) ]
             )
-        
+
     def l_enable(self):
         print self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvchange'
@@ -165,12 +165,12 @@ class LVM(Resource):
             return False
 
 
-    def l_snap (self): 
+    def l_snap (self):
         self.opt_snap = copy.deepcopy (self.opt)
         self.opt_snap['SnapTime'] = time.time()
         self.opt_snap['LV'] = '{0[LV]}_snap_{1[SnapTime]}'.format (self.opt, self.opt_snap)
         self.opt_snap['Origin'] = self.opt['LV']
         print self.opt_snap
         LVM (self.opt_snap) .create()
-        
+
 
