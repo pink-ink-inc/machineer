@@ -122,8 +122,8 @@ class I_Machineer(Instance):
         self.dev_mount = mount.Mount ( {
                     'device': os.path.join (
                             '/dev/mapper'
-                          , '{0[resources][LVM][VG]}-'.format(self.opt)
-                              + self._dmEscape('{0[resources][LVM][LV]}'.format(self.opt))
+                          , self._dmEscape('{0[resources][LVM][VG]}').format(self.opt)
+                              + '-' + self._dmEscape('{0[resources][LVM][LV]}'.format(self.opt))
                           )
                   , 'mountpoint': os.path.join (
                               '{0[resources][LXC][root]}'.format(self.opt)
