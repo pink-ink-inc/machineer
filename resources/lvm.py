@@ -78,7 +78,7 @@ class LVM(Resource):
             [ 'lvcreate'
                 ' --size {PoolMetaSize}'
                 ' --name {Pool}_meta'
-                ' ngw'
+                ' {VG}'
                 .format (**self.opt) ]
             )
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
