@@ -89,7 +89,7 @@ class LVM(Resource):
             )
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lvcreate'
-                ' --name {Pool}_zero'
+                ' --name {Pool}_zero.{VG}'
                 ' --virtualsize 2G'
                 ' --thinpool {VG}/{Pool}'
                 .format (**self.opt) ]
