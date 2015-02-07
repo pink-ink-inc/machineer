@@ -90,10 +90,14 @@ class Mount(Resource):
                     , [self.opt['mountpoint']] )[self.opt['hostname']]
 
     def status(self):
+        s = self.cli.cmd ( self.opt ['hostname']
+                , 'machineer-mount-helpers.status'
+                , kwarg = { 'src': self.opt ['device'], 'tgt': self.opt ['mountpoint'] }
+                ) [self.opt ['hostname']]
         return ResourceStatus ( name = self.opt['name']
-                , exists = self._checkDevice() and self._checkMountpoint()
-                , isRunning = bool ( self._findFirst (self._getListRunning(), self.identify ))
-                , isEnabled = bool ( self._findFirst (self._getListEnabled(), self.identify ))
+                , exists = s ['exists']
+                , isRunning = s ['running']
+                , isEnabled = s ['enabled']
                 , descr = '{device} on {mountpoint}'.format(**self.opt)
                 )
 
