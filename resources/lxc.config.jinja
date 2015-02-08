@@ -1,11 +1,21 @@
 lxc.utsname = "{{container}}"
 lxc.rootfs = /var/lib/lxc/{{container}}/rootfs
+
 {% if autostart %}
 lxc.start.auto = 1
 {% else %}
 lxc.start.auto = 0
 {% endif %}
 
+{% if delay %}
+lxc.start.delay = {{delay}}
+{% else %}
+lxc.start.delay = 0
+{% endif %}
+
+{% if group %}
+lxc.group = {{group}}
+{% endif %} 
 
 lxc.network.type = veth
 lxc.network.link = lxcbr0
