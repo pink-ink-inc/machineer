@@ -113,7 +113,7 @@ class I_Machineer(Instance):
         self.opt['resources']['LVM']['LV'
                 ] = '{0[param][InstanceID]}.{0[param][Project]}'.format(self.opt)
         self.opt['resources']['LVM']['Pool'
-                ] = '{0[param][Project]}'.format(self.opt)
+                ] = '{0[param][Master]}'.format(self.opt)
         self.opt['resources']['LXC']['container'
                 ] = '{0[param][InstanceID]}.{0[param][Project]}'.format(self.opt)
 
