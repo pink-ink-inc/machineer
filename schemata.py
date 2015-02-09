@@ -31,7 +31,6 @@ api =   { 'machineer': machineer
         , 'nextgisweb': nextgisweb
         }
 
-
 def list_(project = None):
     opt = dict ( yaml.load ( jinja2.Template ( open(confPath).read()) .render() ) )
     store = redis.StrictRedis (host = opt['schemata']['redis-server']['hostname'])

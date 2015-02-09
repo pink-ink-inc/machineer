@@ -64,9 +64,25 @@ def _info_schemata():
 
 def _info_schemata_schema(schema):
     s = machineer.schemata
-    return { schema: [ method.__name__ for method in dir(schema)
-            if type(method) == types.FunctionType and method[0:1] != '_' ]
-            for schema in _info_schemata() }
+
+    return  { schema:
+                [ method for method in getattr(s, schema).keys()
+                    if method[0:1] != '_' and callable ( getattr (s,schema) [method] )
+                ] for schema in _info_schemata()
+            }
+
+    # return  { schema:
+    #             [
+    #                 { 'method': method
+    #                 , 'type'  : str ( type ( ( getattr(s,schema)[method] ) ) )
+    #                 }
+    #                 for method
+    #                 in getattr(s, schema).keys()
+    #                 if method[0:1] != '_'
+    #                 and callable ( getattr (s,schema) [method] )
+    #             ]
+    #             for schema in _info_schemata()
+    #         }
 
 def _info_schemata_schema_method(schema, method):
     return  { 'doc': machineer.schemata.schema['method'].__doc__
