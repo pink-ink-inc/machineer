@@ -11,6 +11,7 @@ def echo(*args, **kws):
     return { 'args': args, 'kws': kws }
 
 def status (*args, **kws):
+    global opt
     opt = { 'upstart_service_name': 'machineer-mount'
           , 'upstart_service_separator': ' on '
           , 'conf': '/etc/machineer'
@@ -58,7 +59,6 @@ def status (*args, **kws):
 
 
 def _initctl_machineer_mounts ():
-
     return  [ dbus.SystemBus().get_object ('com.ubuntu.Upstart', bus_object_path)
             .GetAll ('com.ubuntu.Upstart0_6.Instance'
                 , dbus_interface = dbus.PROPERTIES_IFACE)
