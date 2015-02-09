@@ -30,7 +30,7 @@ class LXC(Resource):
               name = rawStatus.name
             , exists = True # Presumably.
                             # A rawStatus can only be generated from an existing instance.
-            , isEnabled = rawStatus.autostart == 'YES'
+            , isEnabled = rawStatus.autostart[0:3] == 'YES'
             , isRunning = rawStatus.state == 'RUNNING'
             , descr = ', '.join(iplist)
             )
@@ -94,11 +94,11 @@ class LXC(Resource):
                 , [ os.path.join (self.opt['root'], self._mkName()) ] )
 
     def l_enable(self):
-            self.cli.cmd ( self.opt['hostname'], 'cp.get_template'
-                    ,   [ 'salt://resource/LXC/config.jinja'
-                        , os.path.join(self.opt['root'], self._mkName(), 'config') ]
-                    , kwarg = self.opt
-                    )
+        self.cli.cmd ( self.opt['hostname'], 'cp.get_template'
+                ,   [ 'salt://resource/LXC/config.jinja'
+                    , os.path.join(self.opt['root'], self._mkName(), 'config') ]
+                , kwarg = dict ( self.opt, **{ 'autostart': True } )
+                )
 
     def l_disable(self):
         self.cli.cmd ( self.opt['hostname'], 'cp.get_template'
