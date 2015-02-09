@@ -25,7 +25,7 @@ class LXC(Resource):
     @staticmethod
     def _resolveRawStatus(rawStatus):
         iplist = sum( [ line.split(', ') if line != '-' else [] # A tiny functional exercise.
-                    for line in [rawStatus.ipv4, rawStatus.ipv6] ] , [ ] ) 
+                    for line in [rawStatus.ipv4, rawStatus.ipv6] ] , [ ] )
         return ResourceStatus(
               name = rawStatus.name
             , exists = True # Presumably.
@@ -45,14 +45,14 @@ class LXC(Resource):
     #     return os.path.join(conf.get('master','lxcPath'), self._name(), 'config')
 
 
-    # def __init__(self, kws): 
+    # def __init__(self, kws):
     #     super(type(self), self).__init__(kws)
     #     self.opt.update(kws)
         # try: self.opt['container'] = "{ClusterName}-{InstanceID}".format(**self.opt)
         # except KeyError: pass
 
     def __init__(self, kws):
-        super(type(self), self).__init__(kws) 
+        super(type(self), self).__init__(kws)
         self.defineMethods()
 
     # def test(self):
@@ -68,11 +68,11 @@ class LXC(Resource):
     def list(self):
         return [ self._resolveRawStatus(x) for x in self._getRawStatusList() ]
 
-    def l_create(self): 
+    def l_create(self):
             self.cli.cmd ( self.opt['hostname'], 'file.mkdir'
-                    , [ os.path.join (self.opt['root'], self._mkName()) ] ) 
+                    , [ os.path.join (self.opt['root'], self._mkName()) ] )
             self.cli.cmd ( self.opt['hostname'], 'file.mkdir'
-                    , [ os.path.join (self.opt['root'], self._mkName(), 'rootfs') ] ) 
+                    , [ os.path.join (self.opt['root'], self._mkName(), 'rootfs') ] )
             self.cli.cmd ( self.opt['hostname'], 'cp.get_template'
                     ,   [ 'salt://resource/LXC/config.jinja'
                         , os.path.join(self.opt['root'], self._mkName(), 'config') ]
@@ -108,7 +108,10 @@ class LXC(Resource):
                 )
 
     def l_start(self):
-        self.cli.cmd ( self.opt['hostname'], 'cmd.run', 
+        self.cli.cmd ( self.opt['hostname'], 'file.write'
+                ,   [ os.path.join(self.opt['root'], self._mkName(), '/rootfs/etc/hostname')
+                    , '{container}' ] )
+        self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lxc-start'
                 ' --daemon'
                 ' --name {container}'
@@ -116,7 +119,7 @@ class LXC(Resource):
             )
 
     def l_stop(self):
-        self.cli.cmd ( self.opt['hostname'], 'cmd.run', 
+        self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lxc-stop'
                 ' --name {container}'
                 .format (**self.opt) ]
