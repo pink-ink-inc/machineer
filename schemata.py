@@ -13,8 +13,9 @@ confPath = '/etc/machineer/machineer.conf'
 
 api =   {
           'machineer':
-            {
-              'create': lambda x: I_Machineer(x).create()
+            { 'create': lambda x: I_Machineer(x).create()
+            , 'enable': lambda x: I_Machineer(x).enable()
+            , 'start': lambda x: I_Machineer(x).start()
             , 'destroy': lambda x: I_Machineer(x).destroy()
             , 'test': lambda x: I_Machineer(x).test()
             , 'list': lambda x: list_(x)
@@ -116,6 +117,8 @@ class I_Machineer(Instance):
                 ] = '{0[param][Master]}'.format(self.opt)
         self.opt['resources']['LXC']['container'
                 ] = '{0[param][InstanceID]}.{0[param][Project]}'.format(self.opt)
+        self.opt['resources']['LXC']['group'
+                ] = '{0[param][Project]}' .format(self.opt)
 
         self.dev_blockdev = lvm.LVM (self.opt['resources']['LVM'])
 
@@ -159,10 +162,30 @@ class I_Machineer(Instance):
                 } }
 
     def create(self):
-
         [ getattr(o,a)()
-                for o in [ self.dev_blockdev, self.dev_mount, self.dev_container ]
-                for a in [ 'create', 'enable', 'start' ] ]
+                for o in [ self.dev_blockdev]
+                for a in [ 'create', 'enable', 'start'] ]
+        [ getattr(o,a)()
+                for o in [ self.dev_mount, self.dev_container ]
+                for a in [ 'create'] ]
+        return self.status()
+
+    def enable(self):
+        [ getattr(o,a)()
+                for o in [ self.dev_blockdev]
+                for a in [ 'create', 'enable', 'start'] ]
+        [ getattr(o,a)()
+                for o in [ self.dev_mount, self.dev_container ]
+                for a in [ 'create', 'enable'] ]
+        return self.status()
+
+    def start(self):
+        [ getattr(o,a)()
+                for o in [ self.dev_blockdev]
+                for a in [ 'create', 'enable', 'start'] ]
+        [ getattr(o,a)()
+                for o in [ self.dev_mount, self.dev_container ]
+                for a in [ 'create', 'enable', 'start'] ]
         return self.status()
 
     def destroy(self):
