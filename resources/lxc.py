@@ -110,7 +110,7 @@ class LXC(Resource):
     def l_start(self):
         self.cli.cmd ( self.opt['hostname'], 'file.write'
                 ,   [ os.path.join(self.opt['root'], self._mkName(), '/rootfs/etc/hostname')
-                    , '{container}' ] )
+                    , '{container}'.format(**self.opt) ] )
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
             [ 'lxc-start'
                 ' --daemon'
