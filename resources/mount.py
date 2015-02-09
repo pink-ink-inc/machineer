@@ -102,8 +102,8 @@ class Mount(Resource):
                 )
 
     def l_create(self):
-        if not self._checkDevice():
-            self.cli.cmd ( self.opt['hostname'], 'file.mkdir', [self.opt['device']] )
+        # if not self._checkDevice():
+        #     self.cli.cmd ( self.opt['hostname'], 'file.mkdir', [self.opt['device']] )
         if not self._checkMountpoint():
             self.cli.cmd ( self.opt['hostname'], 'file.mkdir', [self.opt['mountpoint']] )
 
