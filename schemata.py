@@ -1,3 +1,5 @@
+import types
+
 import jinja2
 import json
 import yaml
@@ -65,6 +67,9 @@ class Instance(object):
                 , self.store_key)
         self.store.sadd ('schemata-project-param:{0[param][Project]}'.format(self.opt)
                 , self._jsonConvert(self.opt['param']) )
+        self.store.set (self.store_key + ':opt', self._jsonConvert (self.opt))
+
+        self.dev = {}
 
     resources = []
 
@@ -84,6 +89,7 @@ class Instance(object):
     def status(self):
         s = self._in_status()
         self.store.set (self.store_key, self._jsonConvert (s))
+        self.store.set (self.store_key + ':status', self._jsonConvert (s))
         return s
 
     def get_status(self):
@@ -135,29 +141,43 @@ class I_Machineer(Instance):
 
         self.dev_container = lxc.LXC ( self.opt['resources']['LXC'] )
 
+        self.dev ['LXC'] = self.dev_container
+        self.dev ['Mount'] = self.dev_mount
+        self.dev ['LVM'] = self.dev_blockdev
+
     def test(self):
         return (self.opt)
 
     def _in_status(self):
-        return \
-                { 'status': {
-                      'LXC':
-                    { 'running': self.dev_container.status().isRunning
-                    , 'autostart' : self.dev_container.status().isEnabled
-                    , 'ip': self.dev_container.status().descr }
-                    if self.dev_container.status().exists
-                    else False
-                    , 'LVM':
-                    { 'enabled': self.dev_blockdev.status().isRunning
-                    , 'writable' : self.dev_blockdev.status().isEnabled }
-                    if self.dev_blockdev.status().exists
-                    else False
-                    , 'Mount':
-                    { 'mounted': self.dev_mount.status().isRunning
-                    , 'automount' : self.dev_mount.status().isEnabled }
-                    if self.dev_mount.status().exists
-                    else False
-                } }
+        status =  { key: self.dev [key] .status()
+                for key in self.dev.keys()
+                }
+        dicts = { key:
+                        { dee: str (getattr (status [key], dee) )
+                        for dee in dir (status [key])
+                        if dee[0:1] != '_' }
+
+                for key in status.keys() }
+        return dicts
+        # return \
+        #         { 'status': {
+        #               'LXC':
+        #             { 'running': self.dev_container.status().isRunning
+        #             , 'autostart' : self.dev_container.status().isEnabled
+        #             , 'ip': self.dev_container.status().descr }
+        #             if self.dev_container.status().exists
+        #             else False
+        #             , 'LVM':
+        #             { 'enabled': self.dev_blockdev.status().isRunning
+        #             , 'writable' : self.dev_blockdev.status().isEnabled }
+        #             if self.dev_blockdev.status().exists
+        #             else False
+        #             , 'Mount':
+        #             { 'mounted': self.dev_mount.status().isRunning
+        #             , 'automount' : self.dev_mount.status().isEnabled }
+        #             if self.dev_mount.status().exists
+        #             else False
+        #         } }
 
     def create(self):
         [ getattr(o,a)()
