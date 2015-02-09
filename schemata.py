@@ -11,9 +11,7 @@ from machineer.resources import lxc, lvm, mount
 
 confPath = '/etc/machineer/machineer.conf'
 
-api =   {
-          'machineer':
-            { 'create': lambda x: I_Machineer(x).create()
+machineer = { 'create': lambda x: I_Machineer(x).create()
             , 'enable': lambda x: I_Machineer(x).enable()
             , 'start': lambda x: I_Machineer(x).start()
             , 'destroy': lambda x: I_Machineer(x).destroy()
@@ -22,16 +20,17 @@ api =   {
             , 'status': lambda x: I_Machineer(x).status()
             , 'get_status': lambda x: I_Machineer(x).get_status()
             }
-        , 'nextgisweb':
-        # dict ( [ (fname, lambda x: getattr(I_NextGISWeb(x), copy.deepcopy(fname))()) for fname in
-        #         [ 'create', 'enable', 'start', 'stop', 'disable', 'destroy', 'status', 'get_status' ] ] )
-            {
-                  'create': lambda x: I_NextGISWeb(x) .create()
+
+nextgisweb =    { 'create': lambda x: I_NextGISWeb(x) .create()
                 , 'destroy': lambda x: I_NextGISWeb(x) .destroy()
                 , 'status': lambda x: I_NextGISWeb(x) .status()
                 , 'get_status': lambda x: I_NextGISWeb(x) .get_status()
-            }
+                }
+
+api =   { 'machineer': machineer 
+        , 'nextgisweb': nextgisweb
         }
+
 
 def list_(project = None):
     opt = dict ( yaml.load ( jinja2.Template ( open(confPath).read()) .render() ) )
