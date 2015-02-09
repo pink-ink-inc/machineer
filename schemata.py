@@ -208,8 +208,8 @@ class I_Machineer(Instance):
 
     def destroy(self):
         [ f() for f in [ getattr(o,a)
-                for o in reversed ( [ self.dev_blockdev, self.dev_mount, self.dev_container ] )
-                for a in [ 'stop', 'disable', 'destroy' ] ] ]
+                for a in [ 'stop', 'disable', 'destroy' ]
+                for o in reversed ( [ self.dev_blockdev, self.dev_mount, self.dev_container ] ) ] ]
         return self.status()
 
     def missingKeys(self):
