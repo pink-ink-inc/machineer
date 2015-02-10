@@ -64,12 +64,14 @@ def _info_schemata():
 
 def _info_schemata_schema(schema):
     s = machineer.schemata
+    return [ method for method in getattr(s, schema).keys()
+        if method[0:1] != '_' and callable ( getattr (s,schema) [method] ) ]
 
-    return  { schema:
-                [ method for method in getattr(s, schema).keys()
-                    if method[0:1] != '_' and callable ( getattr (s,schema) [method] )
-                ] for schema in _info_schemata()
-            }
+    # return  { schema:
+    #             [ method for method in getattr(s, schema).keys()
+    #                 if method[0:1] != '_' and callable ( getattr (s,schema) [method] )
+    #             ] for schema in _info_schemata()
+    #         }
 
     # return  { schema:
     #             [
@@ -102,19 +104,26 @@ def _api_registry_projects_project(*args, **kws):
     callme = _registry_projects_project
     return _serialize (callme(*args, **kws))
 
-@app.route('/api/registry/projects/<project>/<instance>/status')
-def _api_registry_projects_project_instance_status(*args, **kws): 
-    callme = _registry_projects_project_instance_status
+
+
+@app.route('/api/registry/projects/<project>/new')
+def _api_registry_projects_project_new(*args, **kws): 
+    callme = _registry_projects_project_new
     return _serialize (callme(*args, **kws))
 
-@app.route('/api/registry/projects/<project>/<instance>/brief')
-def _api_registry_projects_project_instance_brief(*args, **kws): 
-    callme = _registry_projects_project_instance_brief
+@app.route('/api/registry/projects/<project>/instance/<instance>/status')
+def _api_registry_projects_project_instance_instance_status(*args, **kws): 
+    callme = _registry_projects_project_instance_instance_status
     return _serialize (callme(*args, **kws))
 
-@app.route('/api/registry/projects/<project>/<instance>/state')
-def _api_registry_projects_project_instance_state(*args, **kws): 
-    callme = _registry_projects_project_instance_state
+@app.route('/api/registry/projects/<project>/instance/<instance>/brief')
+def _api_registry_projects_project_instance_instance_brief(*args, **kws): 
+    callme = _registry_projects_project_instance_instance_brief
+    return _serialize (callme(*args, **kws))
+
+@app.route('/api/registry/projects/<project>/instance/<instance>/state')
+def _api_registry_projects_project_instance_instance_state(*args, **kws): 
+    callme = _registry_projects_project_instance_instance_state
     return _serialize (callme(*args, **kws))
 
 def _registry_projects():
@@ -124,7 +133,16 @@ def _registry_projects_project(project):
     # TODO: There's no reason not to handle all registry queries inline.
     return machineer.schemata.list_(project)
 
-def _registry_projects_project_instance_status (project, instance):
+def _registry_projects_project_new(project):
+    return  { 'param':
+                { 'InstanceID': 'inst-{}' .format (int(time.time()))
+                , 'Project': project
+                , 'InstanceClass': 'trusty-01'
+                , 'Master': 'master-20'
+                }
+            }
+
+def _registry_projects_project_instance_instance_status (project, instance):
     # TODO: There's no reason not to handle all registry queries inline.
     return machineer.schemata.api [project] ['get_status'] (
                 { 'param':
@@ -136,10 +154,10 @@ def _registry_projects_project_instance_status (project, instance):
                 }
             )
 
-def _registry_projects_project_instance_brief (project, instance):
+def _registry_projects_project_instance_instance_brief (project, instance):
     return 'z'
 
-def _registry_projects_project_instance_state (project, instance):
+def _registry_projects_project_instance_instance_state (project, instance):
     # Locked / unlocked
     return 'z'
 
