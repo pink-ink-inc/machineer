@@ -8,7 +8,7 @@ import os
 import copy
 
 
-from machineer.resources import lxc, lvm, mount
+from machineer.resources import lxc, lvm, mount, saltkey
 
 
 confPath = '/etc/machineer/machineer.conf'
@@ -24,6 +24,7 @@ machineer = { 'create': lambda x: I_Machineer(x).create()
             }
 
 nextgisweb =    { 'create': lambda x: I_NextGISWeb(x) .create()
+                , 'start': lambda x: I_NextGISWeb(x).start()
                 , 'destroy': lambda x: I_NextGISWeb(x) .destroy()
                 , 'status': lambda x: I_NextGISWeb(x) .status()
                 , 'get_status': lambda x: I_NextGISWeb(x) .get_status()
@@ -144,6 +145,8 @@ class I_Machineer(Instance):
         self.dev ['LXC'] = self.dev_container
         self.dev ['Mount'] = self.dev_mount
         self.dev ['LVM'] = self.dev_blockdev
+        self.dev ['salt'] = saltkey.SaltKey({'minion_id':
+            '{0[param][InstanceID]}.{0[param][Project]}'.format(self.opt)})
 
     def test(self):
         return (self.opt)
@@ -198,18 +201,19 @@ class I_Machineer(Instance):
         return self.status()
 
     def start(self):
+
         [ getattr(o,a)()
                 for o in [ self.dev_blockdev]
                 for a in [ 'create', 'enable', 'start'] ]
         [ getattr(o,a)()
-                for o in [ self.dev_mount, self.dev_container ]
+                for o in [ self.dev_mount, self.dev ['salt'], self.dev_container ]
                 for a in [ 'create', 'enable', 'start'] ]
         return self.status()
 
     def destroy(self):
         [ f() for f in [ getattr(o,a)
                 for a in [ 'stop', 'disable', 'destroy' ]
-                for o in reversed ( [ self.dev_blockdev, self.dev_mount, self.dev_container ] ) ] ]
+                for o in reversed ( [ self.dev_blockdev, self.dev_mount, self.dev ['salt'], self.dev_container ] ) ] ]
         return self.status()
 
     def missingKeys(self):
@@ -235,6 +239,10 @@ class I_NextGISWeb(Instance):
 
     def create(self):
         self.prototype_status = self.prototype.create()
+        return self.prototype_status
+
+    def start(self):
+        self.prototype_status = self.prototype.start()
         return self.prototype_status
 
     def destroy(self):
