@@ -1,56 +1,151 @@
+import sys
+import inspect 
 
+import salt.client
+import yaml
+import jinja2
 
 from machineer.resources import *
 
 
-class NextGISWeb(Resource):
+__opts__ = salt.config.master_config('/etc/salt/master')
+cli = salt.client.LocalClient()
 
-    methods = [ 'create', 'destroy', 'enable', 'disable', 'start', 'stop' ]
-    options = [ 'InstanceID'
-            , 'db_host', 'db_name', 'db_user', 'db_pass' ]
-
-    def __init__(self, kws): 
-        super(type(self), self).__init__(kws)
-        self.defineMethods() 
-        for option in self.options:
-            if option not in self.opt.keys():
-                self.opt[option] = self.opt['InstanceID']
-
-    def l_create(self):
-        self.cli.cmd ( self.opt['InstanceID']
-                , 'cp.get_template'
-                ,   [ 'salt://resource/NextGISWeb/config.ini.jinja'
-                    , self.opt['conf_file_location'] ]
-                , kwarg = self.opt )
-
-    def l_destroy(self):
-        self.cli.cmd ( self.opt['InstanceID'], 'file.remove', [ self.opt['conf_file_location'] ] )
-
-    def status(self):
-        return ResourceStatus( name = self.opt['InstanceID']
-                , exists = self.cli.cmd ( self.opt['InstanceID']
-                    , 'file.file_exists'
-                    , [ self.opt['conf_file_location'] ]
-                    ) [self.opt['InstanceID']]
-                , isEnabled = not self.cli.cmd ( self.opt['InstanceID']
-                    , 'file.file_exists'
-                    , [ self.opt['disable_switch_location'] ]) [self.opt['InstanceID']]
-                , isRunning = self.cli.cmd ( self.opt['InstanceID']
-                    , 'cmd.run'
-                    , [ 'initctl list | grep ngw-uwsgi | grep -o running' ]
-                    ) [self.opt['InstanceID']] == 'running'
-                , descr = self.cli.cmd ( self.opt['InstanceID']
-                    , 'cmd.run', [ 'initctl list | grep ngw-uwsgi' ] ) [self.opt['InstanceID']]
+def _wrap_log(f):
+    def ret(*args, **kws):
+        os.sys.stdout.write (
+                ' -- Calling function {0[1]}'
+                ' on host {0[0]}'
+                ' with args following:\n' .format  (args)
                 )
-    def l_enable(self):
-        pass
+        os.sys.stdout.write (str(args))
+        os.sys.stdout.write (str(kws))
+        s = f (*args, **kws)
+        os.sys.stdout.write ('\n' 'Output:' '\n')
+        os.sys.stdout.write(str(s) if s else 'No output.')
+        os.sys.stdout.write('\n')
+        return s
+    return ret
+cli.cmd = _wrap_log ( cli.cmd )
 
-    def l_start(self):
-        pass
 
-    def l_disable(self):
-        pass
+methods = [ 'create', 'destroy', 'enable', 'disable', 'start', 'stop' ]
 
-    def l_stop (self):
-        pass
+def create(opt):
 
+    cli.cmd ( opt['InstanceID']
+            , 'cp.get_template'
+            ,   [ 'salt://resource/NextGISWeb/config.ini.jinja'
+                , opt['conf_file_location'] ]
+            , kwarg = opt ) [opt['InstanceID']]
+    cli.cmd ( opt['InstanceID']
+            , 'cmd.run'
+            , ['~ngw/env/bin/nextgisweb --config ~ngw/config.ini initialize_db']
+            ) [opt['InstanceID']]
+
+def destroy(opt):
+    cli.cmd ( opt['InstanceID'], 'file.remove', [ opt['conf_file_location'] ] )
+
+def status(opt):
+    return  { 'name': opt['InstanceID']
+            , 'exists': cli.cmd ( opt['InstanceID']
+                , 'file.file_exists'
+                , [ opt['conf_file_location'] ]
+                ) [opt['InstanceID']]
+            , 'enabled': not cli.cmd ( opt['InstanceID']
+                , 'file.file_exists'
+                , [ opt['disable_switch_location'] ]) [opt['InstanceID']]
+            , 'running': cli.cmd ( opt['InstanceID']
+                , 'cmd.run'
+                , [ 'initctl list | grep {job_name} | grep -o running' .format(**opt) ]
+                 ) [opt['InstanceID']] == 'running'
+            , 'description': cli.cmd ( opt['InstanceID']
+                , 'cmd.run', [ 'initctl list | grep {job_name}' .format(**opt) ]
+                ) [opt['InstanceID']]
+            }
+
+def enable(opt):
+    cli.cmd (opt['InstanceID']
+            , 'file.remove', [opt['disable_switch_location']]) [opt['InstanceID']]
+
+def start(opt):
+    cli.cmd (opt['InstanceID']
+            , 'cmd.run', [ 'initctl start {job_name}' .format(**opt) ] ) [opt['InstanceID']]
+
+def disable(opt):
+    cli.cmd (opt['InstanceID']
+            , 'file.touch', [opt['disable_switch_location'] ]) [opt['InstanceID']]
+
+def stop (opt):
+    cli.cmd (opt['InstanceID']
+                , 'cmd.run'
+                , [ 'initctl stop {job_name}' .format (**opt)
+                ]
+            ) [opt['InstanceID']]
+
+def check_create  (opt) : return status(opt) ['exists']
+def check_enable  (opt) : return status(opt)['enabled']
+def check_start   (opt) : return status(opt)['running']
+def check_destroy (opt) : return not check_create (opt)
+def check_disable (opt) : return not check_enable (opt)
+def check_stop    (opt) : return not check_start  (opt)
+
+
+
+def _wrap_simple(f): 
+    def _wrap_simple_ret(obj):
+        opt = {}
+        try:
+            opt .update (
+                yaml.load ( jinja2.Template ( open(confPath) .read()) .render()
+                    ) ['resources'] ['nextgisweb'] )
+        except KeyError: pass
+        opt .update ( **obj )
+        return f(opt)
+    return _wrap_simple_ret
+
+
+[ setattr (sys.modules[__name__], func_name, _wrap_simple (func_obj) ) for func_name, func_obj in
+    inspect.getmembers(sys.modules[__name__], inspect.isfunction)
+        if func_name[0:1] != '_'
+]
+
+def _wrap_check(logic, check):
+    def _wrap_check_ret(opt):
+ 
+        print ( ' --------- \n'
+                'Entering the method wrapper.\n'
+                'Logic function: {logic_name} from {logic_module}.\n'
+                'Check function: {check_name} from {check_module}.\n' ) .format (
+                  logic_name = logic.__name__
+                , check_name = check.__name__
+                , logic_module = logic.__module__
+                , check_module = check.__module__
+                )
+
+        if not check(opt):
+            print ' --- State is not desirable. Will run the logic.'
+            logic(opt)
+            print ' --- Logic completed.'
+            assert check(opt)
+            print ' --- Desirable state reached.'
+        else:
+            print ' --- State is already as desired.'
+    return _wrap_check_ret
+
+
+def _methods_wrap ():
+    [
+            setattr ( sys.modules[__name__]
+                    , method_name
+                    , _wrap_check  ( getattr (sys.modules[__name__], method_name )
+                                , getattr (sys.modules[__name__], 'check_' + method_name )
+                                )
+                    )
+ 
+            for method_name, method_obj in inspect.getmembers(sys.modules[__name__])
+            if method_name in dir(sys.modules[__name__])
+            and 'check_' + method_name in dir(sys.modules[__name__])
+    ]
+
+_methods_wrap()
