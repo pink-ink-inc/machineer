@@ -50,19 +50,21 @@ class SaltKey(Resource):
         self.cli.cmd ( self.opt['minion_fs_hostname'], 'file.write',
                 [ os.path.join (
                           self.opt['minion_fs_path']
-                        , self.minion_config['pki_dir']
+                        # , self.minion_config['pki_dir' .strip('/')]
+                        , 'etc/salt/pki/minion'
                         , 'minion.pub' )
                 , key['pub'] ] )
         self.cli.cmd ( self.opt['minion_fs_hostname'], 'file.write',
                 [ os.path.join (
                           self.opt['minion_fs_path']
-                        , self.minion_config['pki_dir']
+                        # , self.minion_config['pki_dir' .strip('/')]
+                        , 'etc/salt/pki/minion'
                         , 'minion.pem' )
                 , key['priv'] ] )
         self.cli.cmd ( self.opt['minion_fs_hostname'], 'file.set_mode'
                 , [ os.path.join (
                           self.opt['minion_fs_path']
-                        , self.minion_config['pki_dir']
+                        , self.minion_config['pki_dir'] .strip(os.path.sep)
                         , 'minion.pem' )
                 , '0640' ] )
 
