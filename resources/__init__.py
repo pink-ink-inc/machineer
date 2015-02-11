@@ -10,7 +10,6 @@ import salt.client
 
 confPath = '/etc/machineer/machineer.conf'
 
-
 class Resource(object):
 
     def __init__(self, kws):
@@ -53,18 +52,24 @@ class Resource(object):
             ) for f in self.methods ]
 
     @staticmethod
-    def wrap(logic, valid):
+    def wrap (logic, check):
         def closure():
             print ' -- Entering {l}'.format (l = logic.__name__)
-            print ' -- closure class :: {c}.' .format (c = logic.im_self.__class__.__name__)
-            if not valid():
+            if '__module__' in dir(logic):
+                c = logic.__module__
+            elif 'im_self' in dir(logic):
+                c = logic.im_self.__class__.__name__
+            else:
+                c = '...unknown origin...'
+            print ' -- closure class :: {}.' .format (c)
+            if not check():
                 print 'State is not desirable. Will run the logic.'
                 logic()
                 print 'Logic completed.'
-                assert valid()
+                assert check()
                 print 'Desirable state reached.'
             else:
-                print 'State is already desirable.'
+                print 'State is already as desired.'
         return closure
 
     def v_create  (self) : return bool(self)
@@ -118,5 +123,7 @@ class ResourceStatus(object):
         arg_vals.update(kws)
         for kw,arg in arg_vals.iteritems():
             setattr(self, kw, arg)
+
+wrap_method = Resource.wrap
 
 
