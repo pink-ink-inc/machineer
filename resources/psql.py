@@ -13,27 +13,34 @@ class PSQL(Resource):
         self.defineMethods()
 
     def v_create(self):
-        return self.cli.cmd  ( self.opt['hostname']
+        return self.cli.cmd  ( self.opt['minion_id']
                 , 'postgres.db_exists'
                 , [self.opt['db_name']]
-                ) [self.opt['hostname']]
+                ) [self.opt['minion_id']]
 
     def l_create(self):
-        self.cli.cmd ( self.opt['hostname'], 'postgres.db_create', [self.opt['db_name']] ) 
-        self.cli.cmd ( self.opt['hostname'], 'postgres.user_create', [ self.opt['db_user'] ]
-                , kwarg = { 'user': self.opt['db_user'], 'password': self.opt['db_password'] } )
-        self.cli.cmd ( self.opt['hostname']
-                , 'postgres.db_alter'
-                , [ self.opt['db_name'] ]
-                , kwarg = { 'owner': self.opt['db_user'] }
-                )
-        self.cli.cmd ( self.opt['hostname']
-                , 'postgres.owner_to'
-                , [ self.opt['db_name'], self.opt['db_user'] ]
+        # self.cli.cmd ( self.opt['minion_id'], 'postgres.db_create', [self.opt['db_name']] ) 
+        # self.cli.cmd ( self.opt['minion_id'], 'postgres.user_create', [ self.opt['db_user'] ]
+        #         , kwarg = { 'user': self.opt['db_user'], 'password': self.opt['db_pass'] } )
+        # self.cli.cmd ( self.opt['minion_id']
+        #         , 'postgres.db_alter'
+        #         , [ self.opt['db_name'] ]
+        #         , kwarg = { 'owner': self.opt['db_user'] }
+        #         )
+        # self.cli.cmd ( self.opt['minion_id']
+        #         , 'postgres.owner_to'
+        #         , [ self.opt['db_name'], self.opt['db_user'] ]
+        #         )
+        self.cli.cmd ( self.opt ['minion_id'], 'cmd.run'
+                , ['pg_setup.sh {db_name} {db_user} {db_pass}' .format (**self.opt)]
                 )
 
     def l_destroy(self):
-        self.cli.cmd ( self.opt['hostname'], 'postgres.db_remove', [self.opt['db_name']] ) 
+        # self.cli.cmd ( self.opt['minion_id'], 'postgres.db_remove', [self.opt['db_name']] ) 
+        self.cli.cmd ( self.opt ['minion_id'], 'cmd.run'
+                , ['pg_erase.sh {db_name} {db_user} {db_pass}' .format (**self.opt)]
+                )
+        
 
     def status(self):
         s = self.v_create()
