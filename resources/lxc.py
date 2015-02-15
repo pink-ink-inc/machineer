@@ -110,7 +110,7 @@ class LXC(Resource):
     def l_start(self):
         self.cli.cmd ( self.opt['hostname'], 'file.write'
                 ,   [ os.path.join(self.opt['root'], self._mkName(), 'rootfs/etc/hostname')
-                    , '{container}'.format(**self.opt) ] )
+                    , '{container}'.format(**self.opt) .split('.') [0] ] )
         self.cli.cmd ( self.opt['hostname'], 'file.write'
                 ,   [ os.path.join(self.opt['root'], self._mkName(), 'rootfs/etc/salt/minion_id')
                     , '{container}'.format(**self.opt) ] )
