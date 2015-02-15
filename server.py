@@ -134,13 +134,25 @@ def _registry_projects_project(project):
     return machineer.schemata.list_(project)
 
 def _registry_projects_project_new(project):
-    return  { 'param':
-                { 'InstanceID': 'inst-{}' .format (int(time.time()))
-                , 'Project': project
-                , 'InstanceClass': 'trusty-01'
-                , 'Master': 'master-20'
+    ordinal = int(time.time()) - 1423849659
+    if project == 'machineer':
+        return  { 'param':
+                    { 'InstanceID': 'inst-{}' .format (ordinal)
+                    , 'Project': project
+                    , 'InstanceClass': 'trusty-01'
+                    , 'Master': 'master-20'
+                    }
                 }
-            }
+    elif project == 'nextgisweb':
+        return  { 'param':
+                    { 'InstanceID': 'inst-{}' .format (ordinal)
+                    , 'Project': project
+                    , 'InstanceClass': 'image-3-00'
+                    , 'Master': 'master-20'
+                    , 'Name': 'inst-{}.gis.to' .format (ordinal)
+                    , 'Password': '{}{}' .format (project, ordinal)
+                    }
+                }
 
 def _registry_projects_project_instance_instance_status (project, instance):
     # TODO: There's no reason not to handle all registry queries inline.
