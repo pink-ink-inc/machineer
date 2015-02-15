@@ -104,7 +104,10 @@ def _api_registry_projects_project(*args, **kws):
     callme = _registry_projects_project
     return _serialize (callme(*args, **kws))
 
-
+@app.route('/api/registry/projects/<project>/new/interface')
+def _api_registry_projects_project_new_interface(*args, **kws): 
+    callme = _registry_projects_project_new_interface
+    return _serialize (callme(*args, **kws))
 
 @app.route('/api/registry/projects/<project>/new')
 def _api_registry_projects_project_new(*args, **kws): 
@@ -145,7 +148,7 @@ def _registry_projects_project_new(project):
                 }
     elif project == 'nextgisweb':
         return  { 'param':
-                    { 'InstanceID': 'inst-{}' .format (ordinal)
+                    { 'InstanceID': 'instance-{}' .format (ordinal)
                     , 'Project': project
                     , 'InstanceClass': 'image-3-00'
                     , 'Master': 'master-20'
@@ -153,6 +156,28 @@ def _registry_projects_project_new(project):
                     , 'Password': '{}{}' .format (project, ordinal)
                     }
                 }
+
+def _registry_projects_project_new_interface(project):
+    ordinal = int(time.time()) - 1423849659
+    if project == 'machineer':
+        return  [{  'name': 'param', 'type': 'dict', 'inner':
+                      [ {'name': 'InstanceID', 'type': 'string', 'inner': 'inst-{}' .format (ordinal) }
+                    , { 'name': 'Project', 'type': 'string', 'inner': project }
+                    , { 'name': 'InstanceClass', 'type': 'radio', 'inner': [ 'trusty-01' ] }
+                    , { 'name': 'Master', 'type': 'radio', 'inner': [ 'master-20' ] } ] 
+                }]
+    elif project == 'nextgisweb':
+        return  [{ 'name': 'param', 'type': 'dict', 'inner':
+                [ { 'name': 'InstanceID', 'type': 'string', 'inner': 'instance-{}' .format (ordinal) }
+                , { 'name': 'Project', 'type': 'string', 'inner': project }
+        , { 'name': 'InstanceClass', 'type': 'string', 'inner': 'image-3-00' }
+                    , { 'name': 'Master', 'type': 'string', 'inner': 'master-20' }
+                    , { 'name': 'Name', 'type': 'radio', 'inner': [ 'inst-{}.gis.to' .format (ordinal), 'temp-{}.gis.to' .format (ordinal) ] }
+                    , { 'name': 'Password', 'type': 'string', 'inner': '{}{}' .format (project, ordinal) }
+                 ]   
+                }]
+
+
 
 def _registry_projects_project_instance_instance_status (project, instance):
     # TODO: There's no reason not to handle all registry queries inline.
