@@ -38,6 +38,10 @@ def create(opt):
             ,   [ 'salt://resource/NextGISWeb/config.ini.jinja'
                 , opt['conf_file_location'] ]
             , kwarg = opt ) [opt['InstanceID']]
+    cli.cmd ( opt ['InstanceID']
+            , 'file.chown'
+            , [ opt['conf_file_location'], 'ngw', 'ngw']
+            )
     cli.cmd ( opt['InstanceID']
             , 'cmd.run'
             , ['~ngw/env/bin/nextgisweb --config ~ngw/config.ini initialize_db']
@@ -112,6 +116,8 @@ def _wrap_simple(f):
 
 def _wrap_check(logic, check):
     def _wrap_check_ret(opt):
+        print logic
+        print check
  
         print ( ' --------- \n'
                 'Entering the method wrapper.\n'
