@@ -161,19 +161,19 @@ def _registry_projects_project_new_interface(project):
     ordinal = int(time.time()) - 1423849659
     if project == 'machineer':
         return  [{  'name': 'param', 'type': 'dict', 'inner':
-                      [ {'name': 'InstanceID', 'type': 'string', 'inner': 'inst-{}' .format (ordinal) }
+                      [ {'name': 'InstanceID', 'type': 'input', 'inner': 'inst-{}' .format (ordinal) }
                     , { 'name': 'Project', 'type': 'string', 'inner': project }
                     , { 'name': 'InstanceClass', 'type': 'radio', 'inner': [ 'trusty-01' ] }
                     , { 'name': 'Master', 'type': 'radio', 'inner': [ 'master-20' ] } ] 
                 }]
     elif project == 'nextgisweb':
         return  [{ 'name': 'param', 'type': 'dict', 'inner':
-                [ { 'name': 'InstanceID', 'type': 'string', 'inner': 'instance-{}' .format (ordinal) }
+                [ { 'name': 'InstanceID', 'type': 'input', 'inner': 'instance-{}' .format (ordinal) }
                 , { 'name': 'Project', 'type': 'string', 'inner': project }
-        , { 'name': 'InstanceClass', 'type': 'string', 'inner': 'image-3-00' }
-                    , { 'name': 'Master', 'type': 'string', 'inner': 'master-20' }
-                    , { 'name': 'Name', 'type': 'radio', 'inner': [ 'inst-{}.gis.to' .format (ordinal), 'temp-{}.gis.to' .format (ordinal) ] }
-                    , { 'name': 'Password', 'type': 'string', 'inner': '{}{}' .format (project, ordinal) }
+        , { 'name': 'InstanceClass', 'type': 'radio', 'inner': ['image-3-00'] }
+                    , { 'name': 'Master', 'type': 'radio', 'inner': ['master-20'] }
+                    , { 'name': 'Name', 'type': 'input', 'inner': 'inst-{}.gis.to' .format (ordinal) }
+                    , { 'name': 'Password', 'type': 'input', 'inner': '{}{}' .format (project, ordinal) }
                  ]   
                 }]
 
