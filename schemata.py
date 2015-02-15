@@ -6,9 +6,11 @@ import yaml
 import redis
 import os
 import copy
+import time
 
 
-from machineer.resources import lxc, lvm, mount, saltkey
+from machineer.resources import lxc, lvm, mount, saltkey, psql, nginx
+from machineer.resources import nextgisweb as nextgisweb_module
 
 
 confPath = '/etc/machineer/machineer.conf'
@@ -18,16 +20,16 @@ machineer = { 'create': lambda x: I_Machineer(x).create()
             , 'start': lambda x: I_Machineer(x).start()
             , 'destroy': lambda x: I_Machineer(x).destroy()
             , 'test': lambda x: I_Machineer(x).test()
-            , 'list': lambda x: list_(x)
+            # , 'list': lambda x: list_(x)
             , 'status': lambda x: I_Machineer(x).status()
             , 'get_status': lambda x: I_Machineer(x).get_status()
             }
 
 nextgisweb =    { 'create': lambda x: I_NextGISWeb(x) .create()
                 , 'start': lambda x: I_NextGISWeb(x).start()
-                , 'destroy': lambda x: I_NextGISWeb(x) .destroy()
+                # , 'destroy': lambda x: I_NextGISWeb(x) .destroy()
                 , 'status': lambda x: I_NextGISWeb(x) .status()
-                , 'get_status': lambda x: I_NextGISWeb(x) .get_status()
+                # , 'get_status': lambda x: I_NextGISWeb(x) .get_status()
                 }
 
 api =   { 'machineer': machineer 
@@ -125,6 +127,9 @@ class I_Machineer(Instance):
         self.opt['resources']['LXC']['group'
                 ] = '{0[param][Project]}' .format(self.opt)
 
+        self.opt['resources']['SaltKey']['minion_id'
+                ] = '{0[param][InstanceID]}.{0[param][Project]}'.format(self.opt)
+
         self.dev_blockdev = lvm.LVM (self.opt['resources']['LVM'])
 
         self.dev_mount = mount.Mount ( {
@@ -140,13 +145,13 @@ class I_Machineer(Instance):
                             )
                   } )
 
+
         self.dev_container = lxc.LXC ( self.opt['resources']['LXC'] )
 
         self.dev ['LXC'] = self.dev_container
         self.dev ['Mount'] = self.dev_mount
         self.dev ['LVM'] = self.dev_blockdev
-        self.dev ['salt'] = saltkey.SaltKey({'minion_id':
-            '{0[param][InstanceID]}.{0[param][Project]}'.format(self.opt)})
+        self.dev ['salt'] = saltkey.SaltKey(self.opt['resources']['SaltKey'])
 
     def test(self):
         return (self.opt)
@@ -162,25 +167,6 @@ class I_Machineer(Instance):
 
                 for key in status.keys() }
         return dicts
-        # return \
-        #         { 'status': {
-        #               'LXC':
-        #             { 'running': self.dev_container.status().isRunning
-        #             , 'autostart' : self.dev_container.status().isEnabled
-        #             , 'ip': self.dev_container.status().descr }
-        #             if self.dev_container.status().exists
-        #             else False
-        #             , 'LVM':
-        #             { 'enabled': self.dev_blockdev.status().isRunning
-        #             , 'writable' : self.dev_blockdev.status().isEnabled }
-        #             if self.dev_blockdev.status().exists
-        #             else False
-        #             , 'Mount':
-        #             { 'mounted': self.dev_mount.status().isRunning
-        #             , 'automount' : self.dev_mount.status().isEnabled }
-        #             if self.dev_mount.status().exists
-        #             else False
-        #         } }
 
     def create(self):
         [ getattr(o,a)()
@@ -208,6 +194,14 @@ class I_Machineer(Instance):
         [ getattr(o,a)()
                 for o in [ self.dev_mount, self.dev ['salt'], self.dev_container ]
                 for a in [ 'create', 'enable', 'start'] ]
+
+        n = 0
+        while not self.opt ['resources'] ['SaltKey'] ['minion_id'] in self.dev ['salt'] .cli.cmd (self.opt ['resources'] ['SaltKey'] ['minion_id']
+                , 'test.ping', [] ) .keys() :
+                time.sleep (1)
+                n = n+1
+                if n==60: raise Exception
+
         return self.status()
 
     def destroy(self):
@@ -236,6 +230,35 @@ class I_NextGISWeb(Instance):
         super(type(self), self).__init__(kws)
         self.prototype_opt = copy.deepcopy(self.opt)
         self.prototype = I_Machineer(self.prototype_opt)
+        
+        print self.opt
+
+        self.opt ['resources'] ['nextgisweb'] .update (
+        **  { 'db_host': self.opt ['resources'] ['PSQL'] ['hostname']
+            , 'db_user': self.prototype.opt ['resources'] ['LXC'] ['container']
+            , 'db_pass': self.prototype.opt ['resources'] ['LXC'] ['container']
+            , 'db_name': self.prototype.opt ['resources'] ['LXC'] ['container']
+            , 'InstanceID': self.prototype.opt ['resources'] ['LXC'] ['container']
+            }
+        )
+
+        self.opt ['resources'] ['PSQL'] .update (
+        **  { 'db_user': self.prototype.opt ['resources'] ['LXC'] ['container']
+            , 'db_pass': self.prototype.opt ['resources'] ['LXC'] ['container']
+            , 'db_name': self.prototype.opt ['resources'] ['LXC'] ['container']
+            }
+        )
+
+        self.opt['resources'] ['proxy'] .update (
+                **  { 'int_name': self.prototype.opt ['resources'] ['LXC'] ['container']
+                    .split('.')[0]
+                    , 'ext_name': self.opt ['param']['Name']
+                    }
+                )
+
+        self.dev['nextgisweb'] = nextgisweb_module
+        self.dev['PSQL'] = psql.PSQL(self.opt ['resources'] ['PSQL'] )
+        self.dev['proxy'] = nginx
 
     def create(self):
         self.prototype_status = self.prototype.create()
@@ -243,6 +266,24 @@ class I_NextGISWeb(Instance):
 
     def start(self):
         self.prototype_status = self.prototype.start()
+        n = 0
+        while not self.dev ['nextgisweb'] .check_start (self.opt ['resources'] ['nextgisweb'] ):
+                time.sleep (1)
+                n = n+1
+                if n==60: raise Exception
+
+        self.dev ['PSQL'] .create()
+
+        self.dev ['nextgisweb'] .stop(self.opt ['resources'] ['nextgisweb'] )
+        self.dev ['nextgisweb'] .destroy(self.opt ['resources'] ['nextgisweb'] )
+        self.dev ['nextgisweb'] .create(self.opt ['resources'] ['nextgisweb'] )
+        self.dev ['nextgisweb'] .enable(self.opt ['resources'] ['nextgisweb'] )
+        self.dev ['nextgisweb'] .start(self.opt ['resources'] ['nextgisweb'] )
+
+        self.dev ['proxy'] .create (self.opt ['resources'] ['proxy'] )
+        self.dev ['proxy'] .enable (self.opt ['resources'] ['proxy'] )
+        self.dev ['proxy'] .start (self.opt ['resources'] ['proxy'] )
+
         return self.prototype_status
 
     def destroy(self):
