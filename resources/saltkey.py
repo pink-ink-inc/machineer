@@ -18,12 +18,6 @@ class SaltKey(Resource):
         self.wheel = salt.wheel.Wheel(self.__opts__)
         self.opt['minion_fs_path'] = os.path.join (
                 self.opt['minion_fs_path_prefix'], self.opt['minion_id'], 'rootfs' )
-        open('/tmp/minion_conf', 'w').write (
-                self.cli.cmd ( self.opt['minion_fs_hostname'], 'cmd.run'
-            , [ 'cat {minion_conf}'.format ( minion_conf = os.path.join (
-                  self.opt['minion_fs_path']
-                , self.opt['minion_conf_path']))])[self.opt['minion_fs_hostname']])
-        self.minion_config = salt.config.minion_config ('/tmp/minion_conf')
 
     def status(self):
         keys = self.wheel.call_func('key.list_all')
@@ -43,6 +37,12 @@ class SaltKey(Resource):
 
     def l_create(self):
         key = self.wheel.call_func('key.gen')
+        open('/tmp/minion_conf', 'w').write (
+                self.cli.cmd ( self.opt['minion_fs_hostname'], 'cmd.run'
+            , [ 'cat {minion_conf}'.format ( minion_conf = os.path.join (
+                  self.opt['minion_fs_path']
+                , self.opt['minion_conf_path']))])[self.opt['minion_fs_hostname']])
+        self.minion_config = salt.config.minion_config ('/tmp/minion_conf')
         with open ( os.path.join (
                     self.__opts__['pki_dir'], 'minions_rejected', self.opt['minion_id']
                     ), 'w') as f:
