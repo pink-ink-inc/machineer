@@ -83,7 +83,7 @@ def disable(opt):
     cli.cmd ( opt['hostname'], 'file.remove'
             , [ '/etc/nginx/sites-enabled/{int_name}.conf' .format (**opt) ] )
 
-def start (opt):
+def restart (opt):
     cli.cmd (opt['hostname'], 'cmd.run', ['initctl reload machineer-nginx'])
 
 

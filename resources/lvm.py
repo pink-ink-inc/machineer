@@ -29,19 +29,27 @@ class LVM(Resource):
                 , ['lvs --noheadings --separator " "']
                 ) [self.opt['hostname']] .splitlines() ]
 
-    @staticmethod
-    def _resolveRawStatus(s):
-        return ResourceStatus(
-              name = LVM.nameFormat.format(**s._asdict())
-            , exists = True # Presumably.
-                            # A status can only be generated from an existing instance.
-            , isRunning = s.Attr[4] == 'a'  # Active. Enabled for mounting.
-            , isEnabled  = ( s.Attr[1] == 'w'  # Writable. Not read-only.
-                and s.Attr[9] != 'k' )  # Activation skip mark is unset.
-                                        # I.e. the volume will be activated at start-up.
-            , isPool = s.Attr[0] == 't'
-            , descr = '{Pool}/{Origin} {Data}%{LSize}'.format(**s._asdict())
-            )
+    def _resolveRawStatus(self, s):
+        if s:
+            return  {
+                      'name': '{VG}-{LV}' .format (**self.opt)
+                    , 'exists': True
+                    , 'isRunning': s.Attr[4] == 'a'  # Active. Enabled for mounting.
+                    , 'isEnabled' : ( s.Attr[1] == 'w'  # Writable. Not read-only.
+                        and s.Attr[9] != 'k' )  # Activation skip mark is unset.
+                                                # I.e. the volume will be activated at start-up.
+                    , 'isPool': s.Attr[0] == 't'
+                    , 'description': '{Pool}/{Origin} {Data} %{LSize}'.format(**s._asdict())
+                    }
+        else:
+            return  {
+                      'name': '{VG}-{LV}' .format (**self.opt)
+                    , 'exists': False
+                    , 'isRunning': False
+                    , 'isEnabled' : False
+                    , 'isPool': False
+                    , 'description': ''
+                    }
 
     def _mkName(self):
         return self.nameFormat.format(VG = self.opt['VG'], LV = self.opt['LV'])
@@ -51,7 +59,7 @@ class LVM(Resource):
                 if self.opt['LV'] == x.LV and self.opt['VG'] == x.VG ]
         if len(matches) != 0: print matches[0]
         else: print ('No matches')
-        if len(matches) == 0: return ResourceStatus()
+        if len(matches) == 0: return self._resolveRawStatus(False)
         else: return self._resolveRawStatus(matches[0])
 
     def list(self):

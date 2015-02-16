@@ -22,18 +22,23 @@ class LXC(Resource):
                 , ['lxc-ls --fancy']
                 ) [self.opt['hostname']] .splitlines() [2:] ]
 
-    @staticmethod
-    def _resolveRawStatus(rawStatus):
-        iplist = sum( [ line.split(', ') if line != '-' else [] # A tiny functional exercise.
-                    for line in [rawStatus.ipv4, rawStatus.ipv6] ] , [ ] )
-        return ResourceStatus(
-              name = rawStatus.name
-            , exists = True # Presumably.
-                            # A rawStatus can only be generated from an existing instance.
-            , isEnabled = rawStatus.autostart[0:3] == 'YES'
-            , isRunning = rawStatus.state == 'RUNNING'
-            , descr = ', '.join(iplist)
-            )
+    def _resolveRawStatus(self, rawStatus):
+        if rawStatus:
+            iplist = sum( [ line.split(', ') if line != '-' else [] # A tiny functional exercise.
+                        for line in [rawStatus.ipv4, rawStatus.ipv6] ] , [ ] )
+            return  { 'name': self._mkName()
+                    , 'exists': True
+                    , 'isEnabled': rawStatus.autostart[0:3] == 'YES'
+                    , 'isRunning': rawStatus.state == 'RUNNING'
+                    , 'description': ', '.join(iplist)
+                    }
+        else:
+            return  { 'name': self._mkName()
+                    , 'exists': False
+                    , 'isEnabled': False
+                    , 'isRunning': False
+                    , 'description': ''
+                    }
 
     def _mkName(self):
         return "{container}".format(**self.opt)
@@ -62,7 +67,7 @@ class LXC(Resource):
     def status(self):
         matches = [ x for x in self._getRawStatusList()
                 if x.name == self._mkName() ]
-        if len(matches) == 0: return ResourceStatus()
+        if len(matches) == 0: return self._resolveRawStatus(False)
         else: return self._resolveRawStatus(matches[0])
 
     def list(self):
