@@ -1,3 +1,4 @@
+import inspect
 import types
 
 
@@ -9,8 +10,11 @@ import time
 import sys
 import redis
 
+import machineer.generic
+import machineer.registry
+import machineer.schemata
 
-# Setings
+# Settings
 # -------
 
 app = flask.Flask(__name__)
@@ -18,11 +22,6 @@ app.host = '0.0.0.0'
 app.debug = True
 r = redis.Redis()
 q = rq.Queue ( connection = r, async = False )
-
-def _serialize(obj):
-    return json.dumps ( obj
-            , indent = 2
-            )
 
 # API
 # ===
@@ -33,58 +32,38 @@ def _serialize(obj):
 @app.route('/api/info/version')
 def _info_version():
     ret = { 'Machineer': '1.0' }
-    return _serialize (ret)
+    return machineer.generic.serialize (ret)
 
 @app.route('/api/info/test')
 def _api_info_echo(*args, **kws):
     callme = _info_echo
-    return _serialize (callme(*args, **kws))
+    return machineer.generic.serialize (callme(*args, **kws))
 
 @app.route('/api/info/schemata')
 def _api_info_schemata(*args, **kws):
     callme = _info_schemata
-    return _serialize (callme(*args, **kws))
+    return machineer.generic.serialize (callme(*args, **kws))
 
 @app.route('/api/info/schemata/<schema>')
 def _api_info_schemata_schema(*args, **kws):
     callme = _info_schemata_schema
-    return _serialize (callme(*args, **kws))
+    return machineer.generic.serialize (callme(*args, **kws))
 
 @app.route('/api/info/schemata/<schema>/<method>')
 def _api_info_schemata_schema_method(*args, **kws): 
     callme = _info_schemata_schema_method
-    return _serialize (callme(*args, **kws))
+    return machineer.generic.serialize (callme(*args, **kws))
 
 def _info_echo():
     return flask.request.json
 
 def _info_schemata():
-    s = machineer.schemata
-    return [ o for o in dir(s) if type(getattr(s, o)) == types.DictType and o[0:1] != '_' ]
+    return []
 
 def _info_schemata_schema(schema):
     s = machineer.schemata
     return [ method for method in getattr(s, schema).keys()
         if method[0:1] != '_' and callable ( getattr (s,schema) [method] ) ]
-
-    # return  { schema:
-    #             [ method for method in getattr(s, schema).keys()
-    #                 if method[0:1] != '_' and callable ( getattr (s,schema) [method] )
-    #             ] for schema in _info_schemata()
-    #         }
-
-    # return  { schema:
-    #             [
-    #                 { 'method': method
-    #                 , 'type'  : str ( type ( ( getattr(s,schema)[method] ) ) )
-    #                 }
-    #                 for method
-    #                 in getattr(s, schema).keys()
-    #                 if method[0:1] != '_'
-    #                 and callable ( getattr (s,schema) [method] )
-    #             ]
-    #             for schema in _info_schemata()
-    #         }
 
 def _info_schemata_schema_method(schema, method):
     return  { 'doc': machineer.schemata.schema['method'].__doc__
@@ -97,37 +76,37 @@ def _info_schemata_schema_method(schema, method):
 @app.route('/api/registry/projects')
 def _api_registry_projects(*args, **kws): 
     callme = _registry_projects
-    return _serialize (callme(*args, **kws))
+    return machineer.generic.serialize (callme(*args, **kws))
 
 @app.route('/api/registry/projects/<project>')
-def _api_registry_projects_project(*args, **kws): 
-    callme = _registry_projects_project
-    return _serialize (callme(*args, **kws))
+def _api_registry_projects_project(project): 
+    opt = machineer.generic._tree_merge ( [ _registry_projects_project_new (project)
+            , { 'param': { 'Project': project } } ] )
+    return ( machineer.registry.get_blueprints (opt) )
+    
 
 @app.route('/api/registry/projects/<project>/new/interface')
 def _api_registry_projects_project_new_interface(*args, **kws): 
     callme = _registry_projects_project_new_interface
-    return _serialize (callme(*args, **kws))
+    return machineer.generic.serialize (callme(*args, **kws))
 
 @app.route('/api/registry/projects/<project>/new')
 def _api_registry_projects_project_new(*args, **kws): 
     callme = _registry_projects_project_new
-    return _serialize (callme(*args, **kws))
+    return machineer.generic.serialize (callme(*args, **kws))
 
-@app.route('/api/registry/projects/<project>/instance/<instance>/status')
-def _api_registry_projects_project_instance_instance_status(*args, **kws): 
-    callme = _registry_projects_project_instance_instance_status
-    return _serialize (callme(*args, **kws))
+@app.route('/api/registry/projects/<project>/instance/<instance>')
+def _api_registry_projects_project_instance_instance (project, instance): 
+    opt = machineer.generic._tree_merge ( [ _registry_projects_project_new (project)
+            , { 'param': { 'InstanceID': instance , 'Project': project } } ] )
+    return machineer.generic.serialize ( machineer.registry.read_instance_subkeys (opt) )
 
-@app.route('/api/registry/projects/<project>/instance/<instance>/brief')
-def _api_registry_projects_project_instance_instance_brief(*args, **kws): 
-    callme = _registry_projects_project_instance_instance_brief
-    return _serialize (callme(*args, **kws))
+@app.route('/api/registry/projects/<project>/instance/<instance>/<subkey>')
+def _api_registry_projects_project_instance_instance_status(project, instance, subkey): 
+    opt = machineer.generic._tree_merge ( [ _registry_projects_project_new (project)
+            , { 'param': { 'InstanceID': instance , 'Project': project } } ] )
+    return machineer.registry.read_instance_subkey_serial (opt, subkey)
 
-@app.route('/api/registry/projects/<project>/instance/<instance>/state')
-def _api_registry_projects_project_instance_instance_state(*args, **kws): 
-    callme = _registry_projects_project_instance_instance_state
-    return _serialize (callme(*args, **kws))
 
 def _registry_projects():
     return [ 'machineer', 'nextgisweb' ]
@@ -181,15 +160,7 @@ def _registry_projects_project_new_interface(project):
 
 def _registry_projects_project_instance_instance_status (project, instance):
     # TODO: There's no reason not to handle all registry queries inline.
-    return machineer.schemata.api [project] ['get_status'] (
-                { 'param':
-                    { 'InstanceID': instance
-                    , 'Project': project
-                    , 'InstanceClass': ''
-                    , 'Master': ''
-                    }
-                }
-            )
+    return machineer.registry.read_instance_subkey_serial
 
 def _registry_projects_project_instance_instance_brief (project, instance):
     return 'z'
@@ -206,13 +177,24 @@ def _api_call_schema_method(*args, **kws):
     global post_body
     post_body = flask.request.json
     callme = _call_schema_method
-    return _serialize (callme(*args, **kws))
+    return machineer.generic.serialize (callme(*args, **kws))
 
 def _call_schema_method (schema, method):
-    return  ( machineer.schemata.api [schema] [method] (post_body)
-            if schema in machineer.schemata.api.keys()
+    schemata =  { mod_name [2:] :
+                    { method_name: method_obj
+                        for method_name, method_obj
+                        in inspect.getmembers (mod_obj, inspect.isfunction)
+                        if method_name [0] != '_'
+                    }
+                    for mod_name, mod_obj
+                    in inspect.getmembers (machineer.schemata, inspect.ismodule)
+                    if mod_name[0:2] == 's_'
+                }
+
+    return  ( schemata [schema] [method] (post_body)
+            if schema in schemata.keys() and method in schemata [schema] .keys()
             # Or a dict?
-            else machineer.schemata.schema ['method'] (post_body)
+            else '404'
             )
 
 # Legacy:

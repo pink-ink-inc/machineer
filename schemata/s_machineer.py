@@ -12,7 +12,7 @@ import yaml
 import jinja2
 
 import machineer.generic
-
+import machineer.registry 
 
 def _options (opt):
     opt = machineer.generic._tree_merge ( [ yaml.load ( jinja2.Template (
@@ -69,16 +69,22 @@ def _resources (opt):
             }
 
 def opt (opt):
-    return _options (opt)
+    ret = _options (opt)
+    machineer.registry.write_instance_subkey (opt, 'opt', ret)
+    return ret
 
 def status (opt):
     resources = _resources (opt)
-    return  { key: resources [key] .status ()
+    ret =   { key: resources [key] .status ()
             for key in 
             resources .keys()
             }
+    machineer.registry.write_instance_subkey (opt, 'status', ret)
+    return ret
+
 
 def create (opt):
+    machineer.registry.add_blueprint (opt)
     resources = _resources (opt)
     resources ['LVM'] .create ()
     resources ['LVM'] .enable ()

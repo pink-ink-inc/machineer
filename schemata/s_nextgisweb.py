@@ -59,7 +59,9 @@ def _options (opt):
     return opt
 
 def opt (opt):
-    return machineer.generic._tree_merge ( [ machineer.schemata.s_machineer.opt (opt), _options (opt) ] )
+    ret = machineer.generic._tree_merge ( [ machineer.schemata.s_machineer.opt (opt), _options (opt) ] )
+    machineer.registry.write_instance_subkey (opt, 'opt', ret)
+    return ret
 
 def _resources (opt):
     return  { 'PSQL': machineer.resources.psql.PSQL ( _options (opt) ['resources'] ['PSQL'] )
@@ -104,12 +106,14 @@ def start (opt):
 def status (opt):
     opt = _options (opt) 
     resources = _resources (opt)
-    return machineer.generic._tree_merge ( [ machineer.schemata.s_machineer .status (opt)
+    ret = machineer.generic._tree_merge ( [ machineer.schemata.s_machineer .status (opt)
             , { 'PSQL': resources ['PSQL'] .status() }
             , { key: getattr ( sys.modules [ 'machineer.resources.{}' .format (key) ], 'status' )
                     (opt ['resources'] [key])
                 for key in [ 'nextgisweb', 'proxy' ] }
             ] )
+    machineer.registry.write_instance_subkey (opt, 'status', ret)
+    return ret
 
 def disable (opt):
     opt = _options (opt)
