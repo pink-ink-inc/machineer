@@ -28,12 +28,12 @@ class SaltKey(Resource):
               , {'truth': self.opt['minion_id'] in keys['minions_rejected'], 'label': 'rejected'}
               , {'truth': self.opt['minion_id'] not in keys['all'], 'label': 'non-existent'}
               ] if x['truth'] ] [0]
-        return ResourceStatus ( name = self.opt['minion_id']
-                , isRunning = self.opt['key_state'] in ['accepted']
-                , isEnabled = self.opt['key_state'] in ['accepted', 'pending']
-                , exists    = self.opt['key_state'] in ['accepted', 'pending', 'rejected']
-                , descr = '{minion_id} in {key_state}'.format(**self.opt)
-                )
+        return  { 'name': self.opt['minion_id']
+                , 'isRunning': self.opt['key_state'] in ['accepted']
+                , 'isEnabled': self.opt['key_state'] in ['accepted', 'pending']
+                , 'exists'   : self.opt['key_state'] in ['accepted', 'pending', 'rejected']
+                , 'description': '{minion_id} in {key_state}'.format(**self.opt)
+                }
 
     def l_create(self):
         key = self.wheel.call_func('key.gen')

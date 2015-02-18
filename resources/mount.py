@@ -94,12 +94,12 @@ class Mount(Resource):
                 , 'machineer-mount-helpers.status'
                 , kwarg = { 'src': self.opt ['device'], 'tgt': self.opt ['mountpoint'] }
                 ) [self.opt ['hostname']]
-        return ResourceStatus ( name = self.opt['name']
-                , exists = s ['exists']
-                , isRunning = s ['running']
-                , isEnabled = s ['enabled']
-                , descr = '{device} on {mountpoint}'.format(**self.opt)
-                )
+        return  { 'name': self.opt['name']
+                , 'exists': s ['exists']
+                , 'isRunning': s ['running']
+                , 'isEnabled': s ['enabled']
+                , 'description': '{device} on {mountpoint}' .format(**self.opt)
+                }
 
     def l_create(self):
         # if not self._checkDevice():

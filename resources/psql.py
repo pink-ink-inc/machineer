@@ -44,12 +44,11 @@ class PSQL(Resource):
 
     def status(self):
         s = self.v_create()
-        return ResourceStatus (
-              exists = s
-            , isRunning = s
-            , isEnabled = s
-            , descr = 'Host {hostname}: {db_name} for {db_user}.' .format(**self.opt)
-            )
+        return  { 'exists': s
+                , 'isRunning': s
+                , 'isEnabled': s
+                , 'descr': 'Host {hostname}: {db_name} for {db_user}.' .format (**self.opt)
+                }
 
 Export = PSQL 
 

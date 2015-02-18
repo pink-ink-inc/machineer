@@ -51,21 +51,32 @@ def destroy(opt):
     cli.cmd ( opt['InstanceID'], 'file.remove', [ opt['conf_file_location'] ] )
 
 def status(opt):
-    return  { 'name': opt['InstanceID']
-            , 'exists': cli.cmd ( opt['InstanceID']
+    var = { '_exists': cli.cmd ( opt['InstanceID']
                 , 'file.file_exists'
                 , [ opt['conf_file_location'] ]
-                ) [opt['InstanceID']]
-            , 'enabled': not cli.cmd ( opt['InstanceID']
+                )
+          , '_disabled': cli.cmd ( opt['InstanceID']
                 , 'file.file_exists'
-                , [ opt['disable_switch_location'] ]) [opt['InstanceID']]
-            , 'running': cli.cmd ( opt['InstanceID']
+                , [ opt['disable_switch_location'] ])
+          , '_running': cli.cmd ( opt['InstanceID']
                 , 'cmd.run'
                 , [ 'initctl list | grep {job_name} | grep -o running' .format(**opt) ]
-                 ) [opt['InstanceID']] == 'running'
-            , 'description': cli.cmd ( opt['InstanceID']
+                )
+          , '_description': cli.cmd ( opt['InstanceID']
                 , 'cmd.run', [ 'initctl list | grep {job_name}' .format(**opt) ]
-                ) [opt['InstanceID']]
+                )
+          }
+
+    print var
+    var = { key: var [key] [ opt ['InstanceID'] ] if opt ['InstanceID'] in var [key] .keys() else None
+            for key in var .keys() }
+
+
+    return  { 'name': opt ['InstanceID']
+            , 'exists': var ['_exists']
+            , 'enabled': None if var ['_disabled'] == None else not var ['_disabled']
+            , 'running': var ['_running']
+            , 'description': var ['_description']
             }
 
 def enable(opt):
@@ -87,9 +98,9 @@ def stop (opt):
                 ]
             ) [opt['InstanceID']]
 
-def check_create  (opt) : return status(opt) ['exists']
-def check_enable  (opt) : return status(opt)['enabled']
-def check_start   (opt) : return status(opt)['running']
+def check_create  (opt) : return status (opt) ['exists']
+def check_enable  (opt) : return status (opt) ['enabled']
+def check_start   (opt) : return status (opt) ['running']
 def check_destroy (opt) : return not check_create (opt)
 def check_disable (opt) : return not check_enable (opt)
 def check_stop    (opt) : return not check_start  (opt)

@@ -97,16 +97,16 @@ class Resource(object):
     def stop(self): pass
 
     def isRunning(self):
-        return self.status().isRunning
+        return self.status() ['isRunning']
 
     def isEnabled(self):
-        return self.status().isEnabled
+        return self.status() ['isEnabled']
 
     def __nonzero__(self):
-        return self.status().exists
+        return self.status() ['exists']
 
     def name(self):
-        return self.status().name
+        return self.status() ['name']
 
 
 class ResourceStatus(object):
