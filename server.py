@@ -23,6 +23,17 @@ app.debug = True
 r = redis.Redis()
 q = rq.Queue ( connection = r, async = False )
 
+schemata =  { mod_name [2:] :
+                { method_name: method_obj
+                    for method_name, method_obj
+                    in inspect.getmembers (mod_obj, inspect.isfunction)
+                    if method_name [0] != '_'
+                }
+                for mod_name, mod_obj
+                in inspect.getmembers (machineer.schemata, inspect.ismodule)
+                if mod_name[0:2] == 's_'
+            }
+
 # API
 # ===
 
@@ -58,15 +69,13 @@ def _info_echo():
     return flask.request.json
 
 def _info_schemata():
-    return []
+    return schemata .keys()
 
 def _info_schemata_schema(schema):
-    s = machineer.schemata
-    return [ method for method in getattr(s, schema).keys()
-        if method[0:1] != '_' and callable ( getattr (s,schema) [method] ) ]
+    return schemata [schema] .keys()
 
 def _info_schemata_schema_method(schema, method):
-    return  { 'doc': machineer.schemata.schema['method'].__doc__
+    return  { 'doc': schemata [schema] [method] .__doc__
             , 'opt': {}
             }
 
@@ -180,17 +189,6 @@ def _api_call_schema_method(*args, **kws):
     return machineer.generic.serialize (callme(*args, **kws))
 
 def _call_schema_method (schema, method):
-    schemata =  { mod_name [2:] :
-                    { method_name: method_obj
-                        for method_name, method_obj
-                        in inspect.getmembers (mod_obj, inspect.isfunction)
-                        if method_name [0] != '_'
-                    }
-                    for mod_name, mod_obj
-                    in inspect.getmembers (machineer.schemata, inspect.ismodule)
-                    if mod_name[0:2] == 's_'
-                }
-
     return  ( schemata [schema] [method] (post_body)
             if schema in schemata.keys() and method in schemata [schema] .keys()
             # Or a dict?
