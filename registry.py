@@ -54,7 +54,7 @@ def read_instance_subkey_serial (opt, subkey):
 def read_instance_subkeys (opt):
     opt = machineer.generic.options (opt)
     store = _store (opt)
-    ret = store.smembers (_key(opt) ['instance'])
+    ret = list ( store.smembers (_key(opt) ['instance']) )
     del store
     return ret
 

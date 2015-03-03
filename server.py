@@ -1,5 +1,6 @@
 import inspect
 import types
+import datetime
 
 
 import flask
@@ -20,7 +21,7 @@ import machineer.schemata
 app = flask.Flask(__name__)
 app.host = '0.0.0.0'
 app.debug = True
-r = redis.Redis()
+r = redis.Redis(host = 'redis')
 q = rq.Queue ( connection = r, async = False )
 
 schemata =  { mod_name [2:] :
@@ -110,12 +111,31 @@ def _api_registry_projects_project_instance_instance (project, instance):
             , { 'param': { 'InstanceID': instance , 'Project': project } } ] )
     return machineer.generic.serialize ( machineer.registry.read_instance_subkeys (opt) )
 
+@app.route('/api/registry/projects/<project>/instance/<instance>/counters')
+def _api_registry_projects_project_instance_instance_counters(project, instance): 
+    now = datetime.datetime.now()
+    key_day  = 'nginx-access:{}:{}:{:04d}{:02d}{:02d}'.format (
+            project, instance, now.year, now.month, now.day)
+    key_hour = 'nginx-access:{}:{}:{:04d}{:02d}{:02d}{:02d}' .format (
+            project, instance, now.year, now.month, now.day, now.hour)
+
+    return machineer.generic.serialize ({ 'nginx':
+                { 'hour': r.llen(key_hour)
+                , 'day': r.llen(key_day)
+                , 'total': sum (
+                    [ r.llen (key)
+                        for key
+                        in r.keys ('nginx-access:{}:{}:????????' .format(project, instance)) ]
+                    )
+                }
+            })
+
+
 @app.route('/api/registry/projects/<project>/instance/<instance>/<subkey>')
 def _api_registry_projects_project_instance_instance_status(project, instance, subkey): 
     opt = machineer.generic._tree_merge ( [ _registry_projects_project_new (project)
             , { 'param': { 'InstanceID': instance , 'Project': project } } ] )
     return machineer.registry.read_instance_subkey_serial (opt, subkey)
-
 
 def _registry_projects():
     return [ 'machineer', 'nextgisweb' ]

@@ -8,6 +8,7 @@ import yaml
 import jinja2
 
 import machineer.generic
+import machineer.registry
 import machineer.schemata.s_machineer
 
 import machineer.resources.proxy
@@ -51,6 +52,8 @@ def _options (opt):
                     { 'int_name': opt ['resources'] ['LXC'] ['container']
                         .split ('.') [0]
                     , 'ext_name': opt ['param'] ['Name']
+                    , 'project': opt ['param'] ['Project']
+                    , 'instance': opt ['param'] ['InstanceID']
                     }
                 }
             }
@@ -69,6 +72,7 @@ def _resources (opt):
 
 def create (opt):
     opt = _options (opt)
+    machineer.schemata.s_nextgisweb.opt (opt)
     machineer.schemata.s_machineer.create (opt)
 
     resources = _resources (opt)
@@ -101,6 +105,8 @@ def start (opt):
     machineer.resources.proxy .enable  (opt ['resources'] ['proxy'])
     machineer.resources.proxy .restart  (opt ['resources'] ['proxy'])
 
+    machineer.registry.write_instance_subkey (opt, 'counters', [])
+
     return status (opt)
 
 def status (opt):
@@ -132,4 +138,8 @@ def destroy (opt):
     resources ['PSQL'] .destroy ()
 
     return status (opt)
+
+def forget (opt):
+    machineer.schemata.s_machineer .forget (opt)
+    return True
 

@@ -130,3 +130,7 @@ def destroy(opt):
 
     return status (opt)
 
+def forget (opt):
+    machineer.registry.del_blueprint (opt)
+    return True
+
