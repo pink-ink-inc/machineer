@@ -4,6 +4,8 @@
 import sys
 import time
 import datetime
+import copy
+import os
 
 import yaml
 import jinja2
@@ -64,6 +66,27 @@ def _options (opt):
             }
         ] )
 
+    opt ['resources'] ['mount-data'] = copy.deepcopy (opt ['resources'] ['Mount'])
+
+    opt = machineer.generic._tree_merge ( [ opt,
+            { 'resources':
+                { 'mount-data':
+                    { 'device': os.path.join  ( opt ['resources'] ['Mount'] ['xfs_root']
+                                              , opt ['param'] ['InstanceID']
+                                              )
+                    , 'mountpoint': os.path.join ( opt ['resources'] ['Mount'] ['mountpoint']
+                                                 , 'data'
+                                                 )
+                    , 'order': 70
+                    , 'options':   ','.join ( opt ['resources'] ['Mount'] ['options'] .split(',')
+                                            + [ 'prjquota' ]
+                                            )
+                    , 'num_id': timestamp
+                    }
+                }
+            }
+        ] )
+
     return opt
 
 def opt (opt):
@@ -73,6 +96,8 @@ def opt (opt):
 
 def _resources (opt):
     return  { 'PSQL': machineer.resources.psql.PSQL ( _options (opt) ['resources'] ['PSQL'] )
+            , 'mount-data': machineer.resources.mount.Mount (
+                _options (opt) ['resources'] ['mount-data'] )
             }
 
 def create (opt):
@@ -82,6 +107,7 @@ def create (opt):
 
     resources = _resources (opt)
     resources ['PSQL'] .create ()
+    resources ['mount-data'] .create ()
     machineer.resources.proxy .create (opt ['resources'] ['proxy'])
 
     return status (opt)
@@ -91,6 +117,8 @@ def start (opt):
     resources = _resources (opt)
 
     create (opt)
+    resources ['mount-data'] .enable ()
+    resources ['mount-data'] .start ()
 
     machineer.schemata.s_machineer .start (opt)
 
@@ -136,11 +164,14 @@ def disable (opt):
 
 def destroy (opt):
     disable (opt)
+    resources ['mount-data'] .stop ()
+    resources ['mount-data'] .disable ()
     machineer.schemata.s_machineer .destroy (opt)
     opt = _options (opt)
     machineer.resources.proxy .destroy (opt ['resources'] ['proxy'])
     resources = _resources (opt)
     resources ['PSQL'] .destroy ()
+    resources ['mount-data'] .destroy ()
 
     return status (opt)
 

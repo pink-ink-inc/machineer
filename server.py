@@ -163,6 +163,11 @@ def _registry_projects_project_new(project):
                     , 'Name': 'inst-{}.gis.to' .format (ordinal)
                     , 'Password': '{}{}' .format (project, ordinal)
                     , 'soul': 'null'
+                    , 'limit-data': '1g'
+                    , 'cpu.shares': 64
+                    , 'blkio.weight': 10
+                    , 'memory.soft_limit_in_bytes': 536870912
+                    , 'memory.limit_in_bytes': 1073741824
                     }
                 }
 
@@ -193,6 +198,11 @@ def _registry_projects_project_new_interface(project):
                             )
                         ) [0]
                       }
+                    , { 'name': 'limit-data', 'type': 'input', 'inner': '1g' }
+                    , { 'name': 'cpu.shares', 'type': 'input', 'inner': 64 }
+                    , { 'name': 'blkio.weight', 'type': 'input', 'inner': 10 }
+                    , { 'name': 'memory.soft_limit_in_bytes', 'type': 'input', 'inner': 536870912 }
+                    , { 'name': 'memory.limit_in_bytes', 'type': 'input', 'inner': 1073741824 }
                 ]
                 }
                 ]

@@ -29,6 +29,10 @@ def _options (opt):
                 , 'LXC': 
                     { 'container': '{0[param][InstanceID]}.{0[param][Project]}'.format (opt)
                     , 'group': '{0[param][Project]}' .format (opt)
+                    , 'cpu_shares': '{0[param][cpu.shares]}' .format (opt)
+                    , 'blkio_weight': '{0[param][blkio.weight]}' .format (opt)
+                    , 'memory_soft_limit_in_bytes': '{0[param][memory.soft_limit_in_bytes]}' .format (opt)
+                    , 'memory_limit_in_bytes': '{0[param][memory.limit_in_bytes]}' .format (opt)
                     }
                 }
             } ]
