@@ -162,7 +162,7 @@ def _registry_projects_project_new(project):
                     , 'Master': 'master-20'
                     , 'Name': 'inst-{}.gis.to' .format (ordinal)
                     , 'Password': '{}{}' .format (project, ordinal)
-                    , 'soul': None
+                    , 'soul': 'null'
                     }
                 }
 
