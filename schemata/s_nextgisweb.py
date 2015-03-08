@@ -3,6 +3,7 @@
 '''
 import sys
 import time
+import datetime
 
 import yaml
 import jinja2
@@ -16,6 +17,8 @@ import machineer.resources.psql
 import machineer.resources.nextgisweb
 
 def _options (opt):
+    timestamp = int (time.time())
+
     opt = machineer.generic._tree_merge ( [ yaml.load ( jinja2.Template (
         open (machineer.generic.conf_path) .read() ) .render() )
                   , opt ] )
@@ -41,6 +44,8 @@ def _options (opt):
                     , 'db_pass': opt ['resources'] ['LXC'] ['container']
                     , 'db_name': opt ['resources'] ['LXC'] ['container']
                     , 'InstanceID': opt ['resources'] ['LXC'] ['container']
+                    , 'backup_id' : opt ['resources'] ['LXC'] ['container'] + '-' + str (timestamp)
+                    , 'soul': opt ['param'] ['soul']
                     }
                 }
             }
@@ -142,4 +147,11 @@ def destroy (opt):
 def forget (opt):
     machineer.schemata.s_machineer .forget (opt)
     return True
+
+def backup (opt):
+    opt = _options (opt)
+    resources = _resources (opt)
+    machineer.resources.nextgisweb .backup (opt ['resources'] ['nextgisweb'] )
+    machineer.registry.append_project_subkey (opt, 'souls', opt ['resources'] ['nextgisweb'] ['backup_id'])
+    return opt ['resources'] ['nextgisweb'] ['backup_id']
 
