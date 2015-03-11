@@ -152,6 +152,10 @@ def _registry_projects_project_new(project):
                     , 'Project': project
                     , 'InstanceClass': 'trusty-01'
                     , 'Master': 'master-20'
+                    , 'cpu.shares': 64
+                    , 'blkio.weight': 10
+                    , 'memory.soft_limit_in_bytes': 536870912
+                    , 'memory.limit_in_bytes': 1073741824
                     }
                 }
     elif project == 'nextgisweb':
@@ -176,35 +180,42 @@ def _registry_projects_project_new_interface(project):
     opt = machineer.generic._tree_merge ( [ _registry_projects_project_new (project)
             , { 'param': { 'Project': project } } ] )
     if project == 'machineer':
-        return  [{  'name': 'param', 'type': 'dict', 'inner':
-                      [ {'name': 'InstanceID', 'type': 'input', 'inner': 'inst-{}' .format (ordinal) }
-                    , { 'name': 'Project', 'type': 'string', 'inner': project }
-                    , { 'name': 'InstanceClass', 'type': 'radio', 'inner': [ 'trusty-01' ] }
-                    , { 'name': 'Master', 'type': 'radio', 'inner': [ 'master-20' ] } ] 
-                }]
+        return  [
+                    {  'name': 'param', 'type': 'dict', 'inner':
+                        [ {'name': 'InstanceID', 'type': 'input', 'inner': 'inst-{}' .format (ordinal) }
+                        , { 'name': 'Project', 'type': 'string', 'inner': project }
+                        , { 'name': 'InstanceClass', 'type': 'radio', 'inner': [ 'trusty-01' ] }
+                        , { 'name': 'Master', 'type': 'radio', 'inner': [ 'master-20' ] }
+                        , { 'name': 'cpu.shares', 'type': 'input', 'inner': 64 }
+                        , { 'name': 'blkio.weight', 'type': 'input', 'inner': 10 }
+                        , { 'name': 'memory.soft_limit_in_bytes', 'type': 'input', 'inner': 536870912 }
+                        , { 'name': 'memory.limit_in_bytes', 'type': 'input', 'inner': 1073741824 }
+                        ]
+                    }
+                ]
     elif project == 'nextgisweb':
         return  [
-                { 'name': 'param', 'type': 'dict', 'inner':
-                [ { 'name': 'InstanceID', 'type': 'input', 'inner': 'instance-{}' .format (ordinal) }
-                , { 'name': 'Project', 'type': 'string', 'inner': project }
-        , { 'name': 'InstanceClass', 'type': 'radio', 'inner': ['image-3-00'] }
-                    , { 'name': 'Master', 'type': 'radio', 'inner': ['master-20'] }
-                    , { 'name': 'Name', 'type': 'input', 'inner': 'inst-{}.gis.to' .format (ordinal) }
-                    , { 'name': 'Password', 'type': 'input', 'inner': '{}{}' .format (project, ordinal) }
-                    , { 'name': 'soul', 'type': 'radio', 'inner': (
-                        machineer.generic.objectivize (
-                            machineer.registry .lrange_project_subkey_serial (
-                                opt, 'souls')
-                            )
-                        ) [0]
-                      }
-                    , { 'name': 'limit-data', 'type': 'input', 'inner': '1g' }
-                    , { 'name': 'cpu.shares', 'type': 'input', 'inner': 64 }
-                    , { 'name': 'blkio.weight', 'type': 'input', 'inner': 10 }
-                    , { 'name': 'memory.soft_limit_in_bytes', 'type': 'input', 'inner': 536870912 }
-                    , { 'name': 'memory.limit_in_bytes', 'type': 'input', 'inner': 1073741824 }
-                ]
-                }
+                    { 'name': 'param', 'type': 'dict', 'inner':
+                        [ { 'name': 'InstanceID', 'type': 'input', 'inner': 'instance-{}' .format (ordinal) }
+                        , { 'name': 'Project', 'type': 'string', 'inner': project }
+                        , { 'name': 'InstanceClass', 'type': 'radio', 'inner': ['image-3-00'] }
+                            , { 'name': 'Master', 'type': 'radio', 'inner': ['master-20'] }
+                            , { 'name': 'Name', 'type': 'input', 'inner': 'inst-{}.gis.to' .format (ordinal) }
+                            , { 'name': 'Password', 'type': 'input', 'inner': '{}{}' .format (project, ordinal) }
+                            , { 'name': 'soul', 'type': 'radio', 'inner': (
+                                machineer.generic.objectivize (
+                                    machineer.registry .lrange_project_subkey_serial (
+                                        opt, 'souls')
+                                    )
+                                ) [0]
+                              }
+                            , { 'name': 'limit-data', 'type': 'input', 'inner': '1g' }
+                            , { 'name': 'cpu.shares', 'type': 'input', 'inner': 64 }
+                            , { 'name': 'blkio.weight', 'type': 'input', 'inner': 10 }
+                            , { 'name': 'memory.soft_limit_in_bytes', 'type': 'input', 'inner': 536870912 }
+                            , { 'name': 'memory.limit_in_bytes', 'type': 'input', 'inner': 1073741824 }
+                        ]
+                    }
                 ]
 
 def _registry_projects_project_instance_instance_status (project, instance):
