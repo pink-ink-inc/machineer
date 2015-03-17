@@ -1,6 +1,7 @@
 import glob
 import os
 import collections
+import re
 
 import dbus
 
@@ -13,7 +14,7 @@ def echo(*args, **kws):
 def status (*args, **kws):
     global opt
     opt = { 'upstart_service_name': 'machineer-mount'
-          , 'upstart_service_separator': ' on '
+          , 'upstart_service_separator': '( on | with )'
           , 'conf': '/etc/machineer'
           }
 
@@ -29,7 +30,7 @@ def status (*args, **kws):
     ret['exists'] = True if ret['src exists'] and ret['tgt exists'] else False
 
     ret['running'] = True if len ([ obj for obj in _initctl_machineer_mounts()
-            if  { 'name': _initctl_split_name(obj)
+            if  { 'name': { key: _initctl_split_name(obj) [key] for key in ['src', 'tgt'] }
                 , 'state': obj['state']
                 } == { 'name': { k: opt[k] for k in ['src', 'tgt'] }, 'state': 'running' }
             ]) else False
@@ -73,7 +74,9 @@ def _initctl_machineer_mounts ():
             ]
 
 def _initctl_split_name (obj):
-    return dict ( zip ( ['src', 'tgt'], obj ['name'] .split(opt['upstart_service_separator']) ))
+    return dict ( zip ( ['src', 'delim-1', 'tgt', 'delim-2', 'options']
+        , re.split (opt['upstart_service_separator']
+            , obj ['name'] ) ))
 
 def _tree_merge (trees):
 

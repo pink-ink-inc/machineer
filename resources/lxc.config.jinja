@@ -17,6 +17,11 @@ lxc.start.delay = 0
 lxc.group = {{group}}
 {% endif %} 
 
+lxc.cgroup.cpu.shares = {{cpu_shares}}
+lxc.cgroup.blkio.weight = {{blkio_weight}}
+lxc.cgroup.memory.soft_limit_in_bytes = {{memory_soft_limit_in_bytes}}
+lxc.cgroup.memory.limit_in_bytes = {{memory_limit_in_bytes}}
+
 lxc.network.type = veth
 lxc.network.link = lxcbr0
 
