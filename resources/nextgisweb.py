@@ -46,11 +46,26 @@ def create(opt):
             , 'cmd.run'
             , ['~ngw/env/bin/nextgisweb --config ~ngw/config.ini initialize_db']
             ) [opt['InstanceID']]
+    if opt ['soul'] != 'null':
+        cli.cmd ( opt ['InstanceID']
+                , 'cmd.run'
+                , [ 'rsync rsync::nextgisweb/souls/{soul} /data/{soul}' .format (**opt) ]
+                ) [opt ['InstanceID'] ]
+        cli.cmd ( opt['InstanceID']
+                , 'cmd.run'
+                , [ '~ngw/env/bin/nextgisweb'
+                    ' --config ~ngw/config.ini'
+                    ' restore /data/{soul}' .format (**opt) ]
+                ) [ opt ['InstanceID'] ]
+        cli.cmd ( opt ['InstanceID']
+                , 'cmd.run'
+                , [ 'rm /data/{soul}' .format (**opt) ]
+                ) [ opt ['InstanceID'] ]
 
 def destroy(opt):
     cli.cmd ( opt['InstanceID'], 'file.remove', [ opt['conf_file_location'] ] )
 
-def status(opt):
+def status (opt):
     var = { '_exists': cli.cmd ( opt['InstanceID']
                 , 'file.file_exists'
                 , [ opt['conf_file_location'] ]
@@ -65,9 +80,14 @@ def status(opt):
           , '_description': cli.cmd ( opt['InstanceID']
                 , 'cmd.run', [ 'initctl list | grep {job_name}' .format(**opt) ]
                 )
+          , 'backup exists': cli.cmd ( opt ['InstanceID']
+              , 'cmd.retcode'
+              , [ 'rsync rsync::nextgisweb/souls/'
+                  ' | grep -q {backup_id}' .format (**opt)
+                ]
+              )
           }
 
-    print var
     var = { key: var [key] [ opt ['InstanceID'] ] if opt ['InstanceID'] in var [key] .keys() else None
             for key in var .keys() }
 
@@ -77,6 +97,7 @@ def status(opt):
             , 'enabled': None if var ['_disabled'] == None else not var ['_disabled']
             , 'running': var ['_running']
             , 'description': var ['_description']
+            , 'backup exists': ( var ['backup exists'] == 0 )
             }
 
 def enable(opt):
@@ -98,6 +119,36 @@ def stop (opt):
                 ]
             ) [opt['InstanceID']]
 
+def backup (opt):
+    cli.cmd (opt['InstanceID']
+                , 'cmd.run'
+                , [ 'initctl stop {job_name}' .format (**opt)
+                ]
+            ) [opt['InstanceID']]
+
+    cli.cmd     ( opt['InstanceID']
+                , 'cmd.run'
+                , [ '/home/ngw/env/bin/nextgisweb'
+                    ' --config /home/ngw/config.ini'
+                    ' backup /data/{backup_id}' .format (**opt)
+                  ]
+                ) [opt['InstanceID']]
+    cli.cmd ( opt ['InstanceID']
+            , 'cmd.run'
+            , [ 'initctl start {job_name}' .format(**opt) ]
+            ) [opt ['InstanceID'] ]
+
+    cli.cmd ( opt ['InstanceID']
+            , 'cmd.run'
+            , [ 'rsync /data/{backup_id} rsync::nextgisweb/souls/' .format (**opt) ]
+            ) [opt ['InstanceID'] ]
+
+    cli.cmd ( opt ['InstanceID']
+            , 'cmd.run'
+            , [ 'rm /data/{backup_id}' .format (**opt) ]
+            ) [ opt ['InstanceID'] ]
+
+def check_backup  (opt) : return status (opt) ['backup exists']
 def check_create  (opt) : return status (opt) ['exists']
 def check_enable  (opt) : return status (opt) ['enabled']
 def check_start   (opt) : return status (opt) ['running']

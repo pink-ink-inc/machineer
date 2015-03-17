@@ -1,13 +1,14 @@
 import inspect
 import types
+import datetime
+import time
+import sys
 
 
 import flask
 import machineer.schemata
 import json
 import rq
-import time
-import sys
 import redis
 
 import machineer.generic
@@ -20,7 +21,7 @@ import machineer.schemata
 app = flask.Flask(__name__)
 app.host = '0.0.0.0'
 app.debug = True
-r = redis.Redis()
+r = redis.Redis(host = 'redis')
 q = rq.Queue ( connection = r, async = False )
 
 schemata =  { mod_name [2:] :
@@ -110,12 +111,31 @@ def _api_registry_projects_project_instance_instance (project, instance):
             , { 'param': { 'InstanceID': instance , 'Project': project } } ] )
     return machineer.generic.serialize ( machineer.registry.read_instance_subkeys (opt) )
 
+@app.route('/api/registry/projects/<project>/instance/<instance>/counters')
+def _api_registry_projects_project_instance_instance_counters(project, instance): 
+    now = datetime.datetime.now()
+    key_day  = 'nginx-access:{}:{}:{:04d}{:02d}{:02d}'.format (
+            project, instance, now.year, now.month, now.day)
+    key_hour = 'nginx-access:{}:{}:{:04d}{:02d}{:02d}{:02d}' .format (
+            project, instance, now.year, now.month, now.day, now.hour)
+
+    return machineer.generic.serialize ({ 'nginx':
+                { 'hour': r.llen(key_hour)
+                , 'day': r.llen(key_day)
+                , 'total': sum (
+                    [ r.llen (key)
+                        for key
+                        in r.keys ('nginx-access:{}:{}:????????' .format(project, instance)) ]
+                    )
+                }
+            })
+
+
 @app.route('/api/registry/projects/<project>/instance/<instance>/<subkey>')
 def _api_registry_projects_project_instance_instance_status(project, instance, subkey): 
     opt = machineer.generic._tree_merge ( [ _registry_projects_project_new (project)
             , { 'param': { 'InstanceID': instance , 'Project': project } } ] )
     return machineer.registry.read_instance_subkey_serial (opt, subkey)
-
 
 def _registry_projects():
     return [ 'machineer', 'nextgisweb' ]
@@ -132,6 +152,10 @@ def _registry_projects_project_new(project):
                     , 'Project': project
                     , 'InstanceClass': 'trusty-01'
                     , 'Master': 'master-20'
+                    , 'cpu.shares': 64
+                    , 'blkio.weight': 10
+                    , 'memory.soft_limit_in_bytes': 536870912
+                    , 'memory.limit_in_bytes': 1073741824
                     }
                 }
     elif project == 'nextgisweb':
@@ -142,30 +166,57 @@ def _registry_projects_project_new(project):
                     , 'Master': 'master-20'
                     , 'Name': 'inst-{}.gis.to' .format (ordinal)
                     , 'Password': '{}{}' .format (project, ordinal)
+                    , 'soul': 'null'
+                    , 'limit-data': '1g'
+                    , 'cpu.shares': 64
+                    , 'blkio.weight': 10
+                    , 'memory.soft_limit_in_bytes': 536870912
+                    , 'memory.limit_in_bytes': 1073741824
                     }
                 }
 
 def _registry_projects_project_new_interface(project):
     ordinal = int(time.time()) - 1423849659
+    opt = machineer.generic._tree_merge ( [ _registry_projects_project_new (project)
+            , { 'param': { 'Project': project } } ] )
     if project == 'machineer':
-        return  [{  'name': 'param', 'type': 'dict', 'inner':
-                      [ {'name': 'InstanceID', 'type': 'input', 'inner': 'inst-{}' .format (ordinal) }
-                    , { 'name': 'Project', 'type': 'string', 'inner': project }
-                    , { 'name': 'InstanceClass', 'type': 'radio', 'inner': [ 'trusty-01' ] }
-                    , { 'name': 'Master', 'type': 'radio', 'inner': [ 'master-20' ] } ] 
-                }]
+        return  [
+                    {  'name': 'param', 'type': 'dict', 'inner':
+                        [ {'name': 'InstanceID', 'type': 'input', 'inner': 'inst-{}' .format (ordinal) }
+                        , { 'name': 'Project', 'type': 'string', 'inner': project }
+                        , { 'name': 'InstanceClass', 'type': 'radio', 'inner': [ 'trusty-01' ] }
+                        , { 'name': 'Master', 'type': 'radio', 'inner': [ 'master-20' ] }
+                        , { 'name': 'cpu.shares', 'type': 'input', 'inner': 64 }
+                        , { 'name': 'blkio.weight', 'type': 'input', 'inner': 10 }
+                        , { 'name': 'memory.soft_limit_in_bytes', 'type': 'input', 'inner': 536870912 }
+                        , { 'name': 'memory.limit_in_bytes', 'type': 'input', 'inner': 1073741824 }
+                        ]
+                    }
+                ]
     elif project == 'nextgisweb':
-        return  [{ 'name': 'param', 'type': 'dict', 'inner':
-                [ { 'name': 'InstanceID', 'type': 'input', 'inner': 'instance-{}' .format (ordinal) }
-                , { 'name': 'Project', 'type': 'string', 'inner': project }
-        , { 'name': 'InstanceClass', 'type': 'radio', 'inner': ['image-3-00'] }
-                    , { 'name': 'Master', 'type': 'radio', 'inner': ['master-20'] }
-                    , { 'name': 'Name', 'type': 'input', 'inner': 'inst-{}.gis.to' .format (ordinal) }
-                    , { 'name': 'Password', 'type': 'input', 'inner': '{}{}' .format (project, ordinal) }
-                 ]   
-                }]
-
-
+        return  [
+                    { 'name': 'param', 'type': 'dict', 'inner':
+                        [ { 'name': 'InstanceID', 'type': 'input', 'inner': 'instance-{}' .format (ordinal) }
+                        , { 'name': 'Project', 'type': 'string', 'inner': project }
+                        , { 'name': 'InstanceClass', 'type': 'radio', 'inner': ['image-3-00'] }
+                            , { 'name': 'Master', 'type': 'radio', 'inner': ['master-20'] }
+                            , { 'name': 'Name', 'type': 'input', 'inner': 'inst-{}.gis.to' .format (ordinal) }
+                            , { 'name': 'Password', 'type': 'input', 'inner': '{}{}' .format (project, ordinal) }
+                            , { 'name': 'soul', 'type': 'radio', 'inner': (
+                                machineer.generic.objectivize (
+                                    machineer.registry .lrange_project_subkey_serial (
+                                        opt, 'souls')
+                                    )
+                                ) [0]
+                              }
+                            , { 'name': 'limit-data', 'type': 'input', 'inner': '1g' }
+                            , { 'name': 'cpu.shares', 'type': 'input', 'inner': 64 }
+                            , { 'name': 'blkio.weight', 'type': 'input', 'inner': 10 }
+                            , { 'name': 'memory.soft_limit_in_bytes', 'type': 'input', 'inner': 536870912 }
+                            , { 'name': 'memory.limit_in_bytes', 'type': 'input', 'inner': 1073741824 }
+                        ]
+                    }
+                ]
 
 def _registry_projects_project_instance_instance_status (project, instance):
     # TODO: There's no reason not to handle all registry queries inline.

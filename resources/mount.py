@@ -98,12 +98,12 @@ class Mount(Resource):
                 , 'exists': s ['exists']
                 , 'isRunning': s ['running']
                 , 'isEnabled': s ['enabled']
-                , 'description': '{device} on {mountpoint}' .format(**self.opt)
+                , 'description': '{device} on {mountpoint} with {options}' .format(**self.opt)
                 }
 
     def l_create(self):
-        # if not self._checkDevice():
-        #     self.cli.cmd ( self.opt['hostname'], 'file.mkdir', [self.opt['device']] )
+        if not self._checkDevice():
+            self.cli.cmd ( self.opt['hostname'], 'file.mkdir', [self.opt['device']] )
         if not self._checkMountpoint():
             self.cli.cmd ( self.opt['hostname'], 'file.mkdir', [self.opt['mountpoint']] )
 
@@ -118,6 +118,23 @@ class Mount(Resource):
                     ' {device}\t{mountpoint}'
                     ' > {fstab}'
                     .format (**self.opt) ]
+                )
+        if ( self.cli.cmd ( self.opt['hostname']
+                , 'file.directory_exists'
+                , [ self.opt ['device'] ]
+                ) [ self.opt ['hostname'] ] and ( 'limit-data' in self.opt .keys() ) ):
+
+            self.cli.cmd ( self.opt ['hostname']
+                    , 'cmd.run'
+                    , [ 'xfs_quota -x'
+                        ' -c "project -s -p {device} {num_id}" {xfs_root}' .format (**self.opt)
+                      ]
+                )
+            self.cli.cmd ( self.opt ['hostname']
+                    , 'cmd.run'
+                    , [ 'xfs_quota -x'
+                        ' -c "limit -p bhard={limit-data} {num_id}" {xfs_root}' .format (**self.opt)
+                      ]
                 )
 
     def l_disable(self):
@@ -134,6 +151,7 @@ class Mount(Resource):
                     ' machineer-mount'
                     ' device={device}'
                     ' mountpoint={mountpoint}'
+                    ' options={options}'
                     .format (**self.opt) ]
                 )
         self.cli.cmd ( self.opt['hostname'], 'cmd.run',
@@ -142,6 +160,7 @@ class Mount(Resource):
                     ' machineer-mount'
                     ' device={device}'
                     ' mountpoint={mountpoint}'
+                    ' options={options}'
                     .format (**self.opt) ]
                 )
 
@@ -152,5 +171,9 @@ class Mount(Resource):
                     ' machineer-mount'
                     ' device={device}'
                     ' mountpoint={mountpoint}'
+                    ' options={options}'
                     .format (**self.opt) ]
                 )
+
+
+
