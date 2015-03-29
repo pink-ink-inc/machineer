@@ -164,10 +164,11 @@ def disable (opt):
 
 def destroy (opt):
     disable (opt)
+    opt = _options (opt) 
+    resources = _resources (opt)
     resources ['mount-data'] .stop ()
     resources ['mount-data'] .disable ()
     machineer.schemata.s_machineer .destroy (opt)
-    opt = _options (opt)
     machineer.resources.proxy .destroy (opt ['resources'] ['proxy'])
     resources = _resources (opt)
     resources ['PSQL'] .destroy ()
