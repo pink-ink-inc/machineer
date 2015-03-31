@@ -22,7 +22,7 @@ app = flask.Flask(__name__)
 app.host = '0.0.0.0'
 app.debug = True
 r = redis.Redis(host = 'redis')
-q = rq.Queue ( connection = r, async = False )
+q = rq.Queue ( connection = r )
 
 schemata =  { mod_name [2:] :
                 { method_name: method_obj
@@ -233,18 +233,15 @@ def _registry_projects_project_instance_instance_state (project, instance):
 # --------------
 
 @app.route('/api/call/<schema>/<method>', methods = ['POST'])
-def _api_call_schema_method(*args, **kws):
-    global post_body
-    post_body = flask.request.json
-    callme = _call_schema_method
-    return machineer.generic.serialize (callme(*args, **kws))
-
-def _call_schema_method (schema, method):
-    return  ( schemata [schema] [method] (post_body)
+def _api_call_schema_method(schema, method):
+    ret =   q.enqueue ( schemata [schema] [method], flask.request.json
             if schema in schemata.keys() and method in schemata [schema] .keys()
-            # Or a dict?
-            else '404'
+            else False
             )
+    if ret:
+        return 'OK'
+    else:
+        return 'Failed to enqueue.'
 
 # Legacy:
 # --------
