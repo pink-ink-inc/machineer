@@ -187,3 +187,6 @@ def backup (opt):
     machineer.registry.append_project_subkey (opt, 'souls', opt ['resources'] ['nextgisweb'] ['backup_id'])
     return opt ['resources'] ['nextgisweb'] ['backup_id']
 
+def sleep3600 (opt):
+    time.sleep (3600)
+    return True
