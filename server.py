@@ -234,14 +234,15 @@ def _registry_projects_project_instance_instance_state (project, instance):
 
 @app.route('/api/call/<schema>/<method>', methods = ['POST'])
 def _api_call_schema_method(schema, method):
-    ret =   q.enqueue ( schemata [schema] [method], flask.request.json
-            if schema in schemata.keys() and method in schemata [schema] .keys()
-            else False
-            )
-    if ret:
-        return 'OK'
+
+    if schema in schemata.keys() and method in schemata [schema] .keys():
+        ret =   q.enqueue ( schemata [schema] [method], flask.request.json, timeout = 600)
+        if ret:
+            return 'OK'
+        else:
+            return 'Failed to enqueue.'
     else:
-        return 'Failed to enqueue.'
+        return 'No such method!'
 
 # Legacy:
 # --------
