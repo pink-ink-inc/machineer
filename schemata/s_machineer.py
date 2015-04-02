@@ -136,5 +136,6 @@ def destroy(opt):
 
 def forget (opt):
     machineer.registry.del_blueprint (opt)
+    machineer.registry.destroy_instance_record (opt)
     return True
 
