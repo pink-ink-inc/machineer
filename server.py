@@ -3,6 +3,8 @@ import types
 import datetime
 import time
 import sys
+import os
+import base64
 
 
 import flask
@@ -145,7 +147,10 @@ def _registry_projects_project(project):
     return machineer.schemata.list_(project)
 
 def _registry_projects_project_new(project):
-    ordinal = int(time.time()) - 1423849659
+    ordinal = int (
+              (time.time () - 1423849659) * 100
+            )
+    random = os.urandom(8)
     if project == 'machineer':
         return  { 'param':
                     { 'InstanceID': 'inst-{}' .format (ordinal)
@@ -164,8 +169,8 @@ def _registry_projects_project_new(project):
                     , 'Project': project
                     , 'InstanceClass': 'image-3-00'
                     , 'Master': 'master-20'
-                    , 'Name': 'inst-{}.gis.to' .format (ordinal)
-                    , 'Password': '{}{}' .format (project, ordinal)
+                    , 'Name': 'instance-{}.gis.to' .format (ordinal)
+                    , 'Password': '{}' .format (base64.b64encode (random))
                     , 'soul': 'null'
                     , 'limit-data': '1g'
                     , 'cpu.shares': 64

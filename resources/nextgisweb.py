@@ -61,6 +61,12 @@ def create(opt):
                 , 'cmd.run'
                 , [ 'rm /data/{soul}' .format (**opt) ]
                 ) [ opt ['InstanceID'] ]
+    cli.cmd ( opt ['InstanceID']
+            , 'cmd.run'
+            , [ '~ngw/env/bin/nextgisweb'
+                ' --config ~ngw/config.ini'
+                ' change_password "administrator" {password}' .format (**opt) ]
+            )
 
 def destroy(opt):
     cli.cmd ( opt['InstanceID'], 'file.remove', [ opt['conf_file_location'] ] )

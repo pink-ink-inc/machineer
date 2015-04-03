@@ -48,6 +48,7 @@ def _options (opt):
                     , 'InstanceID': opt ['resources'] ['LXC'] ['container']
                     , 'backup_id' : opt ['resources'] ['LXC'] ['container'] + '-' + str (timestamp)
                     , 'soul': opt ['param'] ['soul']
+                    , 'password': opt ['param'] ['Password']
                     }
                 }
             }
