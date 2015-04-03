@@ -167,7 +167,7 @@ def _registry_projects_project_new(project):
         return  { 'param':
                     { 'InstanceID': 'instance-{}' .format (ordinal)
                     , 'Project': project
-                    , 'InstanceClass': 'image-3-00'
+                    , 'InstanceClass': 'image-3-01'
                     , 'Master': 'master-20'
                     , 'Name': 'instance-{}.gis.to' .format (ordinal)
                     , 'Password': '{}' .format (base64.b64encode (random))
@@ -203,7 +203,7 @@ def _registry_projects_project_new_interface(project):
                     { 'name': 'param', 'type': 'dict', 'inner':
                         [ { 'name': 'InstanceID', 'type': 'input', 'inner': 'instance-{}' .format (ordinal) }
                         , { 'name': 'Project', 'type': 'string', 'inner': project }
-                        , { 'name': 'InstanceClass', 'type': 'radio', 'inner': ['image-3-00'] }
+                        , { 'name': 'InstanceClass', 'type': 'radio', 'inner': ['image-3-00', 'image-3-01'] }
                             , { 'name': 'Master', 'type': 'radio', 'inner': ['master-20'] }
                             , { 'name': 'Name', 'type': 'input', 'inner': 'inst-{}.gis.to' .format (ordinal) }
                             , { 'name': 'Password', 'type': 'input', 'inner': '{}{}' .format (project, ordinal) }
